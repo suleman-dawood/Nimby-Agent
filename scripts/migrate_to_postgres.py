@@ -180,12 +180,18 @@ def main():
 
             embedding = chroma_embeddings.get(chunk.id)
 
+            # Strip null bytes from text (corrupt PDF extraction artifacts)
+            clean_text = chunk.text.replace("\x00", "") if chunk.text else ""
+            if not clean_text:
+                skipped += 1
+                continue
+
             pg_chunk = Chunk(
                 document_id=pg_doc_id,
                 pp_number=chunk.pp_number,
                 page_number=chunk.page_number,
                 chunk_index=chunk.chunk_index,
-                text=chunk.text,
+                text=clean_text,
                 char_count=chunk.char_count,
                 extraction_method=chunk.extraction_method,
                 created_at=chunk.created_at,
@@ -194,7 +200,11 @@ def main():
             pg_session.add(pg_chunk)
             migrated += 1
 
-        pg_session.commit()
+        try:
+            pg_session.commit()
+        except Exception as e:
+            pg_session.rollback()
+            print(f"  WARNING: Batch failed ({e}), skipping...")
         print(f"  Batch {i+1}-{i+len(batch)} / {len(chunks)} (migrated: {migrated}, skipped: {skipped})")
 
     pg_session.commit()
