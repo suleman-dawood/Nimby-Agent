@@ -1,0 +1,19 @@
+# Only ignore things we truly don't need on Railway
+data/documents/
+data/raw_html/
+.venv/
+venv/
+__pycache__/
+.next/
+node_modules/
+frontend/
+.vscode/
+.idea/
+.claude/
+plans/
+reports/
+*.pyc
+.DS_Store
+nimby-railway-sa.json
+.env
+*-sa.json

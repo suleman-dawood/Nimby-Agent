@@ -7,27 +7,40 @@ import os
 import re
 import time
 
+import json
+import tempfile
+
 from google import genai
 from google.genai import types
 
 logger = logging.getLogger(__name__)
 
-GCP_PROJECT = "gen-lang-client-0499400729"
-GCP_LOCATION = "us-central1"
+GCP_PROJECT = os.environ.get("GCP_PROJECT", "gen-lang-client-0499400729")
+GCP_LOCATION = os.environ.get("GCP_LOCATION", "us-central1")
 MODEL = "gemini-2.5-flash"
 
 _client: genai.Client | None = None
 
 
 def get_client() -> genai.Client:
-    """Get or create the shared Genai client using ADC."""
+    """Get or create the shared Genai client using ADC or service account JSON."""
     global _client
-    if _client is None:
-        _client = genai.Client(
-            vertexai=True,
-            project=GCP_PROJECT,
-            location=GCP_LOCATION,
-        )
+    if _client is not None:
+        return _client
+
+    # If GOOGLE_SA_JSON env var is set (Railway), write to temp file for ADC
+    sa_json = os.environ.get("GOOGLE_SA_JSON")
+    if sa_json:
+        tmp = tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False)
+        tmp.write(sa_json)
+        tmp.close()
+        os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = tmp.name
+
+    _client = genai.Client(
+        vertexai=True,
+        project=GCP_PROJECT,
+        location=GCP_LOCATION,
+    )
     return _client
 PROMPTS_DIR = os.path.join(os.path.dirname(__file__), "prompts")
 

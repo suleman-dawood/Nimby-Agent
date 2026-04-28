@@ -15,7 +15,10 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import DeclarativeBase, Session, relationship, sessionmaker
 
-DB_PATH = "manifest.sqlite"
+import os as _os
+# Railway volume at /data, local fallback
+_DATA_DIR = "/data" if _os.path.isdir("/data") else "."
+DB_PATH = _os.path.join(_DATA_DIR, "manifest.sqlite")
 
 
 class Base(DeclarativeBase):

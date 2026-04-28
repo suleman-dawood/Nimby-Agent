@@ -14,7 +14,7 @@ from scraper.models import Chunk, Document, create_db_engine, create_session
 
 logger = logging.getLogger(__name__)
 
-CHROMA_DIR = Path("data/chroma")
+CHROMA_DIR = Path("/data/chroma") if Path("/data").is_dir() else Path("data/chroma")
 COLLECTION_NAME = "pp_chunks"
 EMBED_MODEL = "gemini-embedding-001"
 BATCH_SIZE = 100  # Gemini allows up to 100 texts per embed call

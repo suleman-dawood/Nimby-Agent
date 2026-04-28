@@ -14,7 +14,7 @@ from scraper.models import PP, Document
 
 router = APIRouter(prefix="/api/briefs", tags=["briefs"])
 
-BRIEFS_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "data", "briefs")
+BRIEFS_DIR = "/data/briefs" if os.path.isdir("/data") else os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "data", "briefs")
 
 
 @router.get("/{pp_number}", response_model=BriefResponse)
