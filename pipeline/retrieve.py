@@ -1,7 +1,7 @@
-"""Hybrid retrieval: dense vector (Chroma) + BM25 keyword search + reranker.
+"""Hybrid retrieval: pgvector dense search + BM25 keyword search + reranker.
 
 Flow:
-  1. Vector search → top 20 candidates
+  1. Vector search (pgvector cosine) → top 20 candidates
   2. BM25 search → top 20 candidates
   3. Reciprocal Rank Fusion (RRF) → merged top 20
   4. Cohere rerank → top K (default 6)
@@ -13,11 +13,12 @@ import logging
 import os
 from collections import defaultdict
 
-import chromadb
 import cohere
 from rank_bm25 import BM25Okapi
+from sqlalchemy.orm import Session
 
-from pipeline.embed import CHROMA_DIR, COLLECTION_NAME, EMBED_MODEL
+from scraper.models import Chunk, Document, create_db_engine, create_session
+from pipeline.embed import embed_query
 
 logger = logging.getLogger(__name__)
 
@@ -25,96 +26,75 @@ logger = logging.getLogger(__name__)
 _bm25_cache: dict[str, tuple[BM25Okapi, list[dict]]] = {}
 
 
-def _get_collection() -> chromadb.Collection:
-    client = chromadb.PersistentClient(path=str(CHROMA_DIR))
-    return client.get_collection(name=COLLECTION_NAME)
-
-
-def _embed_query(text: str) -> list[float]:
-    from pipeline.llm_utils import get_client
-    client = get_client()
-    result = client.models.embed_content(
-        model=EMBED_MODEL,
-        contents=text,
-        config={"task_type": "RETRIEVAL_QUERY"},
-    )
-    return result.embeddings[0].values
-
-
-def _build_where_filter(pp_number: str, tier_filter: list[int] | None) -> dict:
-    if tier_filter:
-        if len(tier_filter) == 1:
-            return {"$and": [{"pp_number": pp_number}, {"tier": tier_filter[0]}]}
-        else:
-            return {"$and": [{"pp_number": pp_number}, {"tier": {"$in": tier_filter}}]}
-    return {"pp_number": pp_number}
-
-
-def _to_result_dict(meta: dict, text: str, score: float = 0.0) -> dict:
+def _to_result_dict(chunk: Chunk, doc: Document, score: float = 0.0) -> dict:
     return {
-        "chunk_id": meta["chunk_id"],
-        "text": text,
-        "page_number": meta["page_number"],
-        "document_title": meta["document_title"],
-        "category": meta["category"],
-        "tier": meta["tier"],
-        "sub_tier": meta.get("sub_tier", ""),
-        "concern_tag": meta.get("concern_tag", ""),
+        "chunk_id": chunk.id,
+        "text": chunk.text,
+        "page_number": chunk.page_number,
+        "document_title": doc.title,
+        "category": doc.category or "",
+        "tier": doc.tier or 0,
+        "sub_tier": doc.sub_tier or "",
+        "concern_tag": doc.concern_tag or "",
         "score": score,
     }
 
 
 # ---------------------------------------------------------------------------
-# Vector search
+# Vector search (pgvector)
 # ---------------------------------------------------------------------------
 
-def _vector_search(query: str, pp_number: str, tier_filter: list[int] | None, n: int = 20) -> list[dict]:
-    collection = _get_collection()
-    query_embedding = _embed_query(query)
-    where = _build_where_filter(pp_number, tier_filter)
+def _vector_search(
+    session: Session, query: str, pp_number: str,
+    tier_filter: list[int] | None, n: int = 20
+) -> list[dict]:
+    query_embedding = embed_query(query)
 
-    results = collection.query(
-        query_embeddings=[query_embedding],
-        n_results=n,
-        where=where,
-        include=["documents", "metadatas", "distances"],
+    q = (
+        session.query(Chunk, Document, Chunk.embedding.cosine_distance(query_embedding).label("distance"))
+        .join(Document, Chunk.document_id == Document.id)
+        .filter(Chunk.pp_number == pp_number)
+        .filter(Chunk.embedding.isnot(None))
     )
+    if tier_filter:
+        q = q.filter(Document.tier.in_(tier_filter))
 
-    output = []
-    for i in range(len(results["ids"][0])):
-        meta = results["metadatas"][0][i]
-        output.append(_to_result_dict(meta, results["documents"][0][i], results["distances"][0][i]))
+    q = q.order_by("distance").limit(n)
 
-    return output
+    results = []
+    for chunk, doc, distance in q.all():
+        results.append(_to_result_dict(chunk, doc, float(distance)))
+
+    return results
 
 
 # ---------------------------------------------------------------------------
 # BM25 search
 # ---------------------------------------------------------------------------
 
-def _get_bm25_index(pp_number: str, tier_filter: list[int] | None) -> tuple[BM25Okapi, list[dict]]:
-    """Build or retrieve cached BM25 index for a PP+tier combo."""
+def _get_bm25_index(
+    session: Session, pp_number: str, tier_filter: list[int] | None
+) -> tuple[BM25Okapi, list[dict]]:
     cache_key = f"{pp_number}|{sorted(tier_filter) if tier_filter else 'all'}"
 
     if cache_key in _bm25_cache:
         return _bm25_cache[cache_key]
 
-    collection = _get_collection()
-    where = _build_where_filter(pp_number, tier_filter)
-
-    # Get all chunks for this PP+tier
-    all_results = collection.get(
-        where=where,
-        include=["documents", "metadatas"],
+    q = (
+        session.query(Chunk, Document)
+        .join(Document, Chunk.document_id == Document.id)
+        .filter(Chunk.pp_number == pp_number)
+        .filter(Chunk.extraction_method == "pdfplumber")
     )
+    if tier_filter:
+        q = q.filter(Document.tier.in_(tier_filter))
 
+    rows = q.all()
     docs = []
     tokenized = []
-    for i in range(len(all_results["ids"])):
-        text = all_results["documents"][i]
-        meta = all_results["metadatas"][i]
-        docs.append(_to_result_dict(meta, text))
-        tokenized.append(text.lower().split())
+    for chunk, doc in rows:
+        docs.append(_to_result_dict(chunk, doc))
+        tokenized.append(chunk.text.lower().split())
 
     if not tokenized:
         _bm25_cache[cache_key] = (BM25Okapi([[""]]), [])
@@ -127,8 +107,11 @@ def _get_bm25_index(pp_number: str, tier_filter: list[int] | None) -> tuple[BM25
     return bm25, docs
 
 
-def _bm25_search(query: str, pp_number: str, tier_filter: list[int] | None, n: int = 20) -> list[dict]:
-    bm25, docs = _get_bm25_index(pp_number, tier_filter)
+def _bm25_search(
+    session: Session, query: str, pp_number: str,
+    tier_filter: list[int] | None, n: int = 20
+) -> list[dict]:
+    bm25, docs = _get_bm25_index(session, pp_number, tier_filter)
 
     if not docs:
         return []
@@ -136,7 +119,6 @@ def _bm25_search(query: str, pp_number: str, tier_filter: list[int] | None, n: i
     tokenized_query = query.lower().split()
     scores = bm25.get_scores(tokenized_query)
 
-    # Get top-n indices
     ranked = sorted(range(len(scores)), key=lambda i: scores[i], reverse=True)[:n]
 
     output = []
@@ -154,7 +136,6 @@ def _bm25_search(query: str, pp_number: str, tier_filter: list[int] | None, n: i
 # ---------------------------------------------------------------------------
 
 def _rrf_merge(vector_results: list[dict], bm25_results: list[dict], k: int = 60) -> list[dict]:
-    """Merge two ranked lists using Reciprocal Rank Fusion."""
     scores: dict[int, float] = defaultdict(float)
     chunk_map: dict[int, dict] = {}
 
@@ -184,11 +165,9 @@ def _rrf_merge(vector_results: list[dict], bm25_results: list[dict], k: int = 60
 # ---------------------------------------------------------------------------
 
 def _rerank(query: str, candidates: list[dict], top_k: int = 6) -> list[dict]:
-    """Rerank candidates using Cohere rerank API."""
     api_key = os.environ.get("COHERE_API_KEY")
 
     if not api_key or not candidates:
-        # No reranker available — return top-k by RRF score
         return candidates[:top_k]
 
     try:
@@ -225,25 +204,25 @@ def retrieve(
     k: int = 6,
     tier_filter: list[int] | None = None,
 ) -> list[dict]:
-    """Hybrid retrieve: vector + BM25 + RRF merge + rerank.
+    """Hybrid retrieve: pgvector + BM25 + RRF merge + rerank."""
+    engine = create_db_engine()
+    session = create_session(engine)
 
-    Returns top-k chunks with full metadata.
-    """
-    # Step 1+2: parallel retrieval
-    vector_results = _vector_search(query, pp_number, tier_filter, n=20)
-    bm25_results = _bm25_search(query, pp_number, tier_filter, n=20)
+    try:
+        vector_results = _vector_search(session, query, pp_number, tier_filter, n=20)
+        bm25_results = _bm25_search(session, query, pp_number, tier_filter, n=20)
 
-    # Step 3: RRF merge
-    merged = _rrf_merge(vector_results, bm25_results)
+        merged = _rrf_merge(vector_results, bm25_results)
+        reranked = _rerank(query, merged[:20], top_k=k)
 
-    # Step 4: Rerank (top 20 → top k)
-    reranked = _rerank(query, merged[:20], top_k=k)
-
-    return reranked
+        return reranked
+    finally:
+        session.close()
 
 
 if __name__ == "__main__":
     import sys
+
     pp = sys.argv[1] if len(sys.argv) > 1 else "PP-2023-2828"
     query = sys.argv[2] if len(sys.argv) > 2 else "proposed building heights"
 

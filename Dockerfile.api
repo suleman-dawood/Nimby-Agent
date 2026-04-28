@@ -2,24 +2,25 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-RUN apt-get update && apt-get install -y --no-install-recommends gcc openssh-server && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y --no-install-recommends gcc libpq-dev && rm -rf /var/lib/apt/lists/*
 
 COPY pyproject.toml .
 RUN pip install --no-cache-dir \
     fastapi>=0.115 \
     uvicorn>=0.32 \
     sqlalchemy>=2.0 \
+    psycopg2-binary \
+    pgvector \
     google-genai \
     cohere \
-    chromadb>=0.5 \
     rank-bm25 \
     geopy \
     python-dateutil>=2.9
 
-# Application code only — data lives on /data volume
 COPY api/ api/
 COPY pipeline/ pipeline/
 COPY scraper/ scraper/
+COPY data/briefs/ data/briefs/
 
 EXPOSE 8001
 

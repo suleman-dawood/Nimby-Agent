@@ -1,5 +1,8 @@
-"""SQLAlchemy ORM models for the scraper manifest."""
+"""SQLAlchemy ORM models."""
 
+import os
+
+from pgvector.sqlalchemy import Vector
 from sqlalchemy import (
     Column,
     Date,
@@ -12,13 +15,21 @@ from sqlalchemy import (
     Text,
     UniqueConstraint,
     create_engine,
+    text,
 )
 from sqlalchemy.orm import DeclarativeBase, Session, relationship, sessionmaker
 
-import os as _os
-# Railway volume at /data, local fallback
-_DATA_DIR = "/data" if _os.path.isdir("/data") else "."
-DB_PATH = _os.path.join(_DATA_DIR, "manifest.sqlite")
+# Database URL: Railway provides DATABASE_URL, local dev uses SQLite fallback
+DATABASE_URL = os.environ.get(
+    "DATABASE_URL",
+    "sqlite:///manifest.sqlite",
+)
+
+# Railway Postgres URLs use postgres:// but SQLAlchemy needs postgresql://
+if DATABASE_URL.startswith("postgres://"):
+    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
+
+EMBEDDING_DIM = 768  # gemini-embedding-001 output dimension
 
 
 class Base(DeclarativeBase):
@@ -43,7 +54,7 @@ class PP(Base):
     scraped_at = Column(DateTime, nullable=False)
     latitude = Column(Float, nullable=True)
     longitude = Column(Float, nullable=True)
-    geo_source = Column(String, nullable=True)  # 'address' | 'lga_centroid' | None
+    geo_source = Column(String, nullable=True)
 
     documents = relationship("Document", back_populates="pp", cascade="all, delete-orphan")
 
@@ -61,9 +72,9 @@ class Document(Base):
     content_type = Column(String)
     byte_size = Column(Integer)
     download_status = Column(String, nullable=False, default="pending")
-    tier = Column(Integer)          # 1=proposal(1a=main,1b=supporting), 2=technical, 3=admin
-    sub_tier = Column(String)       # '1a'=main proposal, '1b'=supporting proposal docs
-    concern_tag = Column(String)    # traffic, bushfire, ecology, etc.
+    tier = Column(Integer)
+    sub_tier = Column(String)
+    concern_tag = Column(String)
     scraped_at = Column(DateTime, nullable=False)
 
     pp = relationship("PP", back_populates="documents")
@@ -85,8 +96,9 @@ class Chunk(Base):
     chunk_index = Column(Integer, nullable=False)
     text = Column(Text, nullable=False)
     char_count = Column(Integer, nullable=False)
-    extraction_method = Column(String, nullable=False)  # 'pdfplumber' | 'failed'
+    extraction_method = Column(String, nullable=False)
     created_at = Column(DateTime, nullable=False)
+    embedding = Column(Vector(EMBEDDING_DIM), nullable=True)
 
     document = relationship("Document")
 
@@ -97,8 +109,19 @@ class Chunk(Base):
     )
 
 
-def create_db_engine(db_path: str = DB_PATH):
-    engine = create_engine(f"sqlite:///{db_path}", echo=False)
+def create_db_engine(db_url: str = DATABASE_URL):
+    connect_args = {}
+    if db_url.startswith("sqlite"):
+        connect_args = {"check_same_thread": False}
+
+    engine = create_engine(db_url, echo=False, connect_args=connect_args)
+
+    # Enable pgvector extension if using Postgres
+    if "postgresql" in db_url:
+        with engine.connect() as conn:
+            conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
+            conn.commit()
+
     Base.metadata.create_all(engine)
     return engine
 
