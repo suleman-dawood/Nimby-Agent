@@ -29,7 +29,7 @@ DATABASE_URL = os.environ.get(
 if DATABASE_URL.startswith("postgres://"):
     DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
 
-EMBEDDING_DIM = 768  # gemini-embedding-001 output dimension
+EMBEDDING_DIM = 3072  # gemini-embedding-001 output dimension
 
 
 class Base(DeclarativeBase):

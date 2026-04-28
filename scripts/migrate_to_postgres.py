@@ -135,7 +135,25 @@ def main():
 
     # Migrate Chunks with embeddings
     print("Migrating Chunks + embeddings...")
-    chunks = sqlite_session.query(Chunk).all()
+    # Query SQLite without the embedding column (it doesn't exist there)
+    from sqlalchemy import select, column, table
+    chunks_table = table("chunks",
+        column("id"), column("document_id"), column("pp_number"),
+        column("page_number"), column("chunk_index"), column("text"),
+        column("char_count"), column("extraction_method"), column("created_at"),
+    )
+    raw_chunks = sqlite_session.execute(select(chunks_table)).fetchall()
+
+    # Convert to simple objects
+    class ChunkRow:
+        pass
+
+    chunks = []
+    for row in raw_chunks:
+        c = ChunkRow()
+        c.id, c.document_id, c.pp_number, c.page_number, c.chunk_index, \
+            c.text, c.char_count, c.extraction_method, c.created_at = row
+        chunks.append(c)
     batch_size = 500
     migrated = 0
     skipped = 0
