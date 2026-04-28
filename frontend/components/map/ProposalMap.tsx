@@ -1,7 +1,7 @@
 "use client";
 
 import { GoogleMap, Marker, Circle, InfoWindow } from "@react-google-maps/api";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import type { NearbyPP } from "@/lib/api";
 
 const MAP_STYLES = {
@@ -10,45 +10,16 @@ const MAP_STYLES = {
   border: "2px solid var(--rule-heavy)",
 };
 
-const MAP_OPTIONS: google.maps.MapOptions = {
-  zoomControl: true,
-  zoomControlOptions: {
-    position: typeof window !== "undefined" ? google?.maps?.ControlPosition?.RIGHT_BOTTOM : undefined,
-  },
-  mapTypeControl: false,
-  streetViewControl: false,
-  fullscreenControl: true,
-  styles: [
-    { elementType: "geometry", stylers: [{ color: "#e8e4dd" }] },
-    { elementType: "labels.text.fill", stylers: [{ color: "#4a4a4a" }] },
-    { elementType: "labels.text.stroke", stylers: [{ color: "#f5f2ed" }] },
-    {
-      featureType: "road",
-      elementType: "geometry",
-      stylers: [{ color: "#d4cfc7" }],
-    },
-    {
-      featureType: "road",
-      elementType: "geometry.stroke",
-      stylers: [{ color: "#c4bfb6" }],
-    },
-    {
-      featureType: "water",
-      elementType: "geometry",
-      stylers: [{ color: "#b8ccd4" }],
-    },
-    {
-      featureType: "poi.park",
-      elementType: "geometry",
-      stylers: [{ color: "#c8d4c0" }],
-    },
-    {
-      featureType: "poi",
-      elementType: "labels",
-      stylers: [{ visibility: "off" }],
-    },
-  ],
-};
+const MAP_VISUAL_STYLES = [
+  { elementType: "geometry", stylers: [{ color: "#e8e4dd" }] },
+  { elementType: "labels.text.fill", stylers: [{ color: "#4a4a4a" }] },
+  { elementType: "labels.text.stroke", stylers: [{ color: "#f5f2ed" }] },
+  { featureType: "road", elementType: "geometry", stylers: [{ color: "#d4cfc7" }] },
+  { featureType: "road", elementType: "geometry.stroke", stylers: [{ color: "#c4bfb6" }] },
+  { featureType: "water", elementType: "geometry", stylers: [{ color: "#b8ccd4" }] },
+  { featureType: "poi.park", elementType: "geometry", stylers: [{ color: "#c8d4c0" }] },
+  { featureType: "poi", elementType: "labels", stylers: [{ visibility: "off" }] },
+];
 
 const DEFAULT_CENTER = { lat: -33.87, lng: 151.21 };
 
@@ -66,6 +37,38 @@ export default function ProposalMap({
   onMarkerClick,
 }: Props) {
   const [selected, setSelected] = useState<NearbyPP | null>(null);
+
+  const mapOptions = useMemo(() => ({
+    zoomControl: true,
+    mapTypeControl: false,
+    streetViewControl: false,
+    fullscreenControl: true,
+    styles: MAP_VISUAL_STYLES,
+  }), []);
+
+  const userIcon = useMemo(() => {
+    if (typeof window === "undefined" || !window.google) return undefined;
+    return {
+      path: google.maps.SymbolPath.CIRCLE,
+      scale: 8,
+      fillColor: "#b8432f",
+      fillOpacity: 1,
+      strokeColor: "#1a1a1a",
+      strokeWeight: 2,
+    };
+  }, []);
+
+  const ppIcon = useMemo(() => {
+    if (typeof window === "undefined" || !window.google) return undefined;
+    return {
+      path: google.maps.SymbolPath.BACKWARD_CLOSED_ARROW,
+      scale: 5,
+      fillColor: "#1a1a1a",
+      fillOpacity: 0.9,
+      strokeColor: "#1a1a1a",
+      strokeWeight: 1,
+    };
+  }, []);
 
   const onLoad = useCallback(
     (map: google.maps.Map) => {
@@ -89,19 +92,9 @@ export default function ProposalMap({
       center={center}
       zoom={12}
       onLoad={onLoad}
-      options={MAP_OPTIONS}
+      options={mapOptions}
     >
-      <Marker
-        position={center}
-        icon={{
-          path: google.maps.SymbolPath.CIRCLE,
-          scale: 8,
-          fillColor: "#b8432f",
-          fillOpacity: 1,
-          strokeColor: "#1a1a1a",
-          strokeWeight: 2,
-        }}
-      />
+      <Marker position={center} icon={userIcon} />
 
       <Circle
         center={center}
@@ -122,14 +115,7 @@ export default function ProposalMap({
             <Marker
               key={pp.pp_number}
               position={{ lat: pp.latitude, lng: pp.longitude }}
-              icon={{
-                path: google.maps.SymbolPath.BACKWARD_CLOSED_ARROW,
-                scale: 5,
-                fillColor: "#1a1a1a",
-                fillOpacity: 0.9,
-                strokeColor: "#1a1a1a",
-                strokeWeight: 1,
-              }}
+              icon={ppIcon}
               onClick={() => {
                 setSelected(pp);
                 onMarkerClick?.(pp);

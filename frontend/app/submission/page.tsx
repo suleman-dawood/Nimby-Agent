@@ -15,21 +15,42 @@ import {
   Center,
   List,
 } from "@mantine/core";
+import { Autocomplete } from "@react-google-maps/api";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { useState, useEffect } from "react";
-import { getConcerns, generateSubmission } from "@/lib/api";
+import { useState, useEffect, useRef } from "react";
+import { getConcerns, generateSubmission, getBrief, getCitation } from "@/lib/api";
+import MapProvider from "@/components/map/MapProvider";
 
-export default function SubmissionPage() {
+function SubmissionForm() {
   const [ppNumber, setPpNumber] = useState<string>("");
+  const [portalUrl, setPortalUrl] = useState<string | null>(null);
   const [selectedConcerns, setSelectedConcerns] = useState<string[]>([]);
   const [freeText, setFreeText] = useState("");
   const [userName, setUserName] = useState("");
   const [userAddress, setUserAddress] = useState("");
+  const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
 
   useEffect(() => {
     const stored = sessionStorage.getItem("nimby_submission_pp");
     if (stored) setPpNumber(stored);
+
+    const searchData = sessionStorage.getItem("nimby_search");
+    if (searchData) {
+      const data = JSON.parse(searchData);
+      if (data.address) setUserAddress(data.address);
+    }
   }, []);
+
+  // Fetch portal URL from brief data
+  const { data: briefData } = useQuery({
+    queryKey: ["brief", ppNumber],
+    queryFn: () => getBrief(ppNumber),
+    enabled: !!ppNumber,
+  });
+
+  useEffect(() => {
+    if (briefData?.portal_url) setPortalUrl(briefData.portal_url);
+  }, [briefData]);
 
   const { data: concernsData } = useQuery({
     queryKey: ["concerns"],
@@ -58,6 +79,23 @@ export default function SubmissionPage() {
     a.download = `submission_${ppNumber}.md`;
     a.click();
     URL.revokeObjectURL(url);
+  };
+
+  const handleCopyAndOpen = () => {
+    if (!submitMutation.data) return;
+    navigator.clipboard.writeText(submitMutation.data.markdown);
+    if (portalUrl) window.open(portalUrl, "_blank");
+  };
+
+  const onAutocompleteLoad = (ac: google.maps.places.Autocomplete) => {
+    autocompleteRef.current = ac;
+  };
+
+  const onPlaceChanged = () => {
+    const place = autocompleteRef.current?.getPlace();
+    if (place?.formatted_address) {
+      setUserAddress(place.formatted_address);
+    }
   };
 
   return (
@@ -153,12 +191,23 @@ export default function SubmissionPage() {
                 value={userName}
                 onChange={(e) => setUserName(e.currentTarget.value)}
               />
-              <TextInput
-                label="Your address"
-                placeholder="Street address"
-                value={userAddress}
-                onChange={(e) => setUserAddress(e.currentTarget.value)}
-              />
+              <div>
+                <Autocomplete
+                  onLoad={onAutocompleteLoad}
+                  onPlaceChanged={onPlaceChanged}
+                  options={{
+                    componentRestrictions: { country: "au" },
+                    types: ["address"],
+                  }}
+                >
+                  <TextInput
+                    label="Your address"
+                    placeholder="Start typing your address..."
+                    value={userAddress}
+                    onChange={(e) => setUserAddress(e.currentTarget.value)}
+                  />
+                </Autocomplete>
+              </div>
             </Group>
 
             <Button
@@ -209,6 +258,54 @@ export default function SubmissionPage() {
                   </Text>
                 </div>
 
+                {submitMutation.data.citations.length > 0 && (
+                  <div
+                    style={{
+                      padding: 16,
+                      background: "var(--paper-warm)",
+                      border: "1px solid var(--rule)",
+                    }}
+                  >
+                    <Text
+                      style={{
+                        fontFamily: "'IBM Plex Mono', monospace",
+                        fontSize: 10,
+                        textTransform: "uppercase",
+                        letterSpacing: "0.08em",
+                        color: "var(--ink-faint)",
+                        marginBottom: 8,
+                      }}
+                    >
+                      Sources ({submitMutation.data.citations.length})
+                    </Text>
+                    {submitMutation.data.citations.map((c) => (
+                      <Text
+                        key={`${c.document_title}|${c.page}`}
+                        style={{
+                          fontSize: 11,
+                          color: "var(--accent)",
+                          cursor: "pointer",
+                          textDecoration: "underline",
+                          marginBottom: 2,
+                        }}
+                        onClick={async () => {
+                          try {
+                            const cit = await getCitation(
+                              ppNumber,
+                              c.document_title,
+                              c.page
+                            );
+                            if (cit.pdf_url)
+                              window.open(cit.pdf_url, "_blank");
+                          } catch {}
+                        }}
+                      >
+                        {c.document_title}, p.{c.page}
+                      </Text>
+                    ))}
+                  </div>
+                )}
+
                 {submitMutation.data.dropped_concerns.length > 0 && (
                   <Alert color="yellow" title="Insufficient evidence">
                     <List size="sm">
@@ -221,21 +318,28 @@ export default function SubmissionPage() {
                   </Alert>
                 )}
 
-                <Group justify="space-between" align="center">
-                  <Button onClick={handleDownload}>Download</Button>
+                <Group gap="sm">
+                  <Button onClick={handleDownload} variant="outline">
+                    Download
+                  </Button>
+                  <Button onClick={handleCopyAndOpen}>
+                    Copy &amp; open NSW Portal
+                  </Button>
+                </Group>
+
+                {portalUrl && (
                   <Text
                     style={{
-                      fontFamily: "'IBM Plex Mono', monospace",
-                      fontSize: 10,
+                      fontSize: 12,
                       color: "var(--ink-faint)",
-                      textTransform: "uppercase",
-                      letterSpacing: "0.06em",
+                      lineHeight: 1.5,
                     }}
                   >
-                    Verified: {submitMutation.data.citation_stats.verified}/
-                    {submitMutation.data.citation_stats.total} citations
+                    Clicking &ldquo;Copy &amp; open NSW Portal&rdquo; copies
+                    your submission to the clipboard and opens the proposal
+                    page. Paste it into the submission form on the portal.
                   </Text>
-                </Group>
+                )}
               </>
             )}
 
@@ -250,5 +354,13 @@ export default function SubmissionPage() {
         )}
       </Stack>
     </Container>
+  );
+}
+
+export default function SubmissionPage() {
+  return (
+    <MapProvider>
+      <SubmissionForm />
+    </MapProvider>
   );
 }

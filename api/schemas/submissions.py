@@ -16,15 +16,15 @@ class DroppedConcern(BaseModel):
     reason: str
 
 
-class CitationStats(BaseModel):
-    total: int = 0
-    verified: int = 0
+class SubmissionCitation(BaseModel):
+    document_title: str
+    page: int
 
 
 class SubmissionResponse(BaseModel):
     markdown: str
     dropped_concerns: list[DroppedConcern] = []
-    citation_stats: CitationStats = CitationStats()
+    citations: list[SubmissionCitation] = []
 
 
 class ConcernsResponse(BaseModel):

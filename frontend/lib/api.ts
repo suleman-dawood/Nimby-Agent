@@ -50,6 +50,7 @@ export interface BriefResponse {
   description: string | null;
   markdown: string;
   addresses: string | null;
+  portal_url: string | null;
 }
 
 export interface CitationResponse {
@@ -68,7 +69,7 @@ export interface AskResponse {
 export interface SubmissionResponse {
   markdown: string;
   dropped_concerns: { concern: string; reason: string }[];
-  citation_stats: { total: number; verified: number };
+  citations: { document_title: string; page: number }[];
 }
 
 // --- API calls ---
@@ -113,6 +114,63 @@ export function getImpact(ppNumber: string, address: string, distanceKm: number)
     method: "POST",
     body: JSON.stringify({ pp_number: ppNumber, address, distance_km: distanceKm }),
   });
+}
+
+export interface StreamCallbacks {
+  onToken: (token: string) => void;
+  onCitations: (citations: { document_title: string; page: number }[]) => void;
+  onError: (error: string) => void;
+  onDone: () => void;
+}
+
+async function streamRequest(path: string, body: object, callbacks: StreamCallbacks) {
+  const res = await fetch(`${API_BASE}${path}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+
+  if (!res.ok || !res.body) {
+    callbacks.onError("Stream request failed");
+    return;
+  }
+
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split("\n");
+    buffer = lines.pop() || "";
+
+    for (const line of lines) {
+      if (!line.startsWith("data: ")) continue;
+      const data = line.slice(6);
+      if (data === "[DONE]") {
+        callbacks.onDone();
+        return;
+      }
+      try {
+        const parsed = JSON.parse(data);
+        if (parsed.type === "token") callbacks.onToken(parsed.content);
+        else if (parsed.type === "citations") callbacks.onCitations(parsed.citations);
+        else if (parsed.type === "error") callbacks.onError(parsed.content);
+      } catch {}
+    }
+  }
+  callbacks.onDone();
+}
+
+export function streamAsk(ppNumber: string, question: string, callbacks: StreamCallbacks) {
+  return streamRequest("/api/qa/ask/stream", { pp_number: ppNumber, question }, callbacks);
+}
+
+export function streamImpact(ppNumber: string, address: string, distanceKm: number, callbacks: StreamCallbacks) {
+  return streamRequest("/api/qa/impact/stream", { pp_number: ppNumber, address, distance_km: distanceKm }, callbacks);
 }
 
 export function getConcerns() {

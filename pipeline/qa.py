@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session
 
 from scraper.models import PP, Document, Chunk, create_db_engine, create_session
 from pipeline.llm_utils import (
-    load_prompt, call_llm, normalize_citations, extract_citations,
+    load_prompt, call_llm, stream_llm, normalize_citations, extract_citations,
     format_chunks, find_chunk, extract_claim_for_citation,
 )
 from pipeline.retrieve import retrieve

@@ -2,7 +2,7 @@
 
 import {
   Text,
-  TextInput,
+  Textarea,
   Button,
   Stack,
   Loader,
@@ -11,20 +11,25 @@ import {
   Group,
   ActionIcon,
 } from "@mantine/core";
-import { useQuery, useMutation } from "@tanstack/react-query";
-import { useState, useRef, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useState, useRef, useEffect, useCallback } from "react";
 import {
-  askQuestion,
-  getImpact,
+  getCitation,
   getSuggestions,
-  type AskResponse,
+  streamAsk,
+  streamImpact,
 } from "@/lib/api";
 
+interface Citation {
+  document_title: string;
+  page: number;
+}
+
 interface Message {
-  role: "system" | "user" | "assistant";
+  role: "user" | "assistant";
   content: string;
-  citations?: AskResponse["citations"];
-  verification?: AskResponse["verification_stats"];
+  citations?: Citation[];
+  streaming?: boolean;
 }
 
 interface Props {
@@ -37,6 +42,30 @@ interface Props {
 
 const CITE_RE = /\[doc:\s*.+?\s*\|\s*p\.?\s*\d+\]/g;
 
+function renderMarkdown(text: string) {
+  // Strip citation markers
+  let clean = text.replace(CITE_RE, "");
+
+  // Bold
+  clean = clean.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
+  // Italic
+  clean = clean.replace(/\*(.+?)\*/g, "<em>$1</em>");
+  // Bullet lists
+  clean = clean.replace(/^[-•]\s+(.+)$/gm, "<li>$1</li>");
+  clean = clean.replace(new RegExp("(<li>.*</li>\\n?)+", "gs"), (match) => `<ul>${match}</ul>`);
+  // Paragraphs (double newline)
+  clean = clean
+    .split(/\n{2,}/)
+    .map((p) => p.trim())
+    .filter(Boolean)
+    .map((p) => (p.startsWith("<ul>") || p.startsWith("<li>") ? p : `<p>${p}</p>`))
+    .join("");
+  // Single newlines within paragraphs
+  clean = clean.replace(/(?<!<\/li>)\n(?!<)/g, "<br />");
+
+  return clean;
+}
+
 export default function ChatPanel({
   ppNumber,
   address,
@@ -46,6 +75,7 @@ export default function ChatPanel({
 }: Props) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
+  const [isStreaming, setIsStreaming] = useState(false);
   const [impactLoaded, setImpactLoaded] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -55,71 +85,116 @@ export default function ChatPanel({
     enabled: opened,
   });
 
-  // Load personalized impact on first open
-  const impactMutation = useMutation({
-    mutationFn: () => getImpact(ppNumber, address || "", distanceKm),
-    onSuccess: (data) => {
-      setMessages([
-        {
-          role: "assistant",
-          content: data.answer.replace(CITE_RE, ""),
-          citations: data.citations,
-          verification: data.verification_stats,
-        },
-      ]);
-      setImpactLoaded(true);
-    },
-    onError: () => {
-      setMessages([
-        {
-          role: "assistant",
-          content:
-            "I couldn't generate a personalized impact summary. Ask me anything about this proposal.",
-        },
-      ]);
-      setImpactLoaded(true);
-    },
-  });
+  const scrollToBottom = useCallback(() => {
+    requestAnimationFrame(() => {
+      scrollRef.current?.scrollTo(0, scrollRef.current.scrollHeight);
+    });
+  }, []);
 
+  const startStream = useCallback(
+    (
+      streamFn: (callbacks: {
+        onToken: (t: string) => void;
+        onCitations: (c: Citation[]) => void;
+        onError: (e: string) => void;
+        onDone: () => void;
+      }) => Promise<void>
+    ) => {
+      setIsStreaming(true);
+
+      // Add empty assistant message
+      setMessages((prev) => [
+        ...prev,
+        { role: "assistant", content: "", streaming: true },
+      ]);
+
+      let accumulated = "";
+
+      streamFn({
+        onToken: (token) => {
+          accumulated += token;
+          setMessages((prev) => {
+            const updated = [...prev];
+            const last = updated[updated.length - 1];
+            if (last.role === "assistant") {
+              updated[updated.length - 1] = {
+                ...last,
+                content: accumulated,
+                streaming: true,
+              };
+            }
+            return updated;
+          });
+          scrollToBottom();
+        },
+        onCitations: (citations) => {
+          setMessages((prev) => {
+            const updated = [...prev];
+            const last = updated[updated.length - 1];
+            if (last.role === "assistant") {
+              updated[updated.length - 1] = {
+                ...last,
+                citations,
+                streaming: false,
+              };
+            }
+            return updated;
+          });
+        },
+        onError: (error) => {
+          setMessages((prev) => {
+            const updated = [...prev];
+            const last = updated[updated.length - 1];
+            if (last.role === "assistant") {
+              updated[updated.length - 1] = {
+                ...last,
+                content: error || "Something went wrong.",
+                streaming: false,
+              };
+            }
+            return updated;
+          });
+          setIsStreaming(false);
+        },
+        onDone: () => {
+          setIsStreaming(false);
+          scrollToBottom();
+        },
+      });
+    },
+    [scrollToBottom]
+  );
+
+  // Load impact on first open
   useEffect(() => {
     if (opened && !impactLoaded && address) {
-      impactMutation.mutate();
+      setImpactLoaded(true);
+      startStream((cb) =>
+        streamImpact(ppNumber, address, distanceKm, cb)
+      );
     }
-  }, [opened]);
-
-  const askMutation = useMutation({
-    mutationFn: (q: string) => askQuestion(ppNumber, q),
-    onSuccess: (data) => {
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: "assistant",
-          content: data.answer.replace(CITE_RE, ""),
-          citations: data.citations,
-          verification: data.verification_stats,
-        },
-      ]);
-    },
-    onError: () => {
-      setMessages((prev) => [
-        ...prev,
-        { role: "assistant", content: "Sorry, I couldn't find an answer." },
-      ]);
-    },
-  });
+  }, [opened, impactLoaded, address, ppNumber, distanceKm, startStream]);
 
   const handleSend = (q?: string) => {
     const question = q || input;
-    if (!question.trim()) return;
+    if (!question.trim() || isStreaming) return;
 
     setMessages((prev) => [...prev, { role: "user", content: question }]);
     setInput("");
-    askMutation.mutate(question);
+
+    startStream((cb) => streamAsk(ppNumber, question, cb));
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
+    }
   };
 
   useEffect(() => {
-    scrollRef.current?.scrollTo(0, scrollRef.current.scrollHeight);
-  }, [messages, askMutation.isPending]);
+    scrollToBottom();
+  }, [messages.length, scrollToBottom]);
 
   if (!opened) {
     return (
@@ -196,7 +271,7 @@ export default function ChatPanel({
         }}
       >
         <Stack gap="md">
-          {impactMutation.isPending && (
+          {messages.length === 0 && isStreaming && (
             <Center py="xl">
               <Loader size="sm" color="dark" />
               <Text
@@ -232,12 +307,30 @@ export default function ChatPanel({
                     lineHeight: 1.7,
                   }}
                 >
-                  {msg.content}
+                  <div
+                    className="chat-markdown"
+                    dangerouslySetInnerHTML={{
+                      __html: renderMarkdown(msg.content),
+                    }}
+                  />
+
+                  {msg.streaming && (
+                    <span
+                      style={{
+                        display: "inline-block",
+                        width: 6,
+                        height: 14,
+                        background: "var(--ink)",
+                        marginLeft: 2,
+                        animation: "blink 1s step-end infinite",
+                      }}
+                    />
+                  )}
 
                   {msg.citations && msg.citations.length > 0 && (
                     <div
                       style={{
-                        marginTop: 8,
+                        marginTop: 10,
                         paddingTop: 8,
                         borderTop: "1px solid var(--rule)",
                       }}
@@ -252,66 +345,46 @@ export default function ChatPanel({
                           marginBottom: 4,
                         }}
                       >
-                        Sources ({msg.citations.length})
+                        Sources
                       </Text>
-                      {[
-                        ...new Set(
-                          msg.citations.map(
-                            (c) => `${c.document_title}, p.${c.page}`
-                          )
-                        ),
-                      ].map((label) => (
+                      {msg.citations.map((c) => (
                         <Text
-                          key={label}
+                          key={`${c.document_title}|${c.page}`}
                           style={{
                             fontSize: 10,
-                            color: "var(--ink-faint)",
+                            color: "var(--accent)",
+                            cursor: "pointer",
+                            textDecoration: "underline",
+                          }}
+                          onClick={async () => {
+                            try {
+                              const cit = await getCitation(
+                                ppNumber,
+                                c.document_title,
+                                c.page
+                              );
+                              if (cit.pdf_url)
+                                window.open(cit.pdf_url, "_blank");
+                            } catch {}
                           }}
                         >
-                          {label}
+                          {c.document_title}, p.{c.page}
                         </Text>
                       ))}
                     </div>
-                  )}
-
-                  {msg.verification && msg.verification.total > 0 && (
-                    <Text
-                      style={{
-                        fontSize: 9,
-                        color: "var(--ink-faint)",
-                        fontFamily: "'IBM Plex Mono', monospace",
-                        textTransform: "uppercase",
-                        letterSpacing: "0.06em",
-                        marginTop: 6,
-                      }}
-                    >
-                      Verified: {msg.verification.verified}/
-                      {msg.verification.total}
-                    </Text>
                   )}
                 </div>
               )}
             </div>
           ))}
-
-          {askMutation.isPending && (
-            <Center py="sm">
-              <Loader size="xs" color="dark" />
-              <Text
-                ml="xs"
-                style={{ fontSize: 11, color: "var(--ink-faint)" }}
-              >
-                Searching documents...
-              </Text>
-            </Center>
-          )}
         </Stack>
       </div>
 
       {/* Suggestions */}
       {suggestions?.questions &&
         suggestions.questions.length > 0 &&
-        messages.length <= 1 && (
+        messages.length <= 1 &&
+        !isStreaming && (
           <div
             style={{
               padding: "8px 16px",
@@ -340,24 +413,50 @@ export default function ChatPanel({
           borderTop: "2px solid var(--rule-heavy)",
           display: "flex",
           gap: 8,
+          alignItems: "flex-end",
         }}
       >
-        <TextInput
+        <Textarea
           placeholder="Ask about this proposal..."
           value={input}
           onChange={(e) => setInput(e.currentTarget.value)}
-          onKeyDown={(e) => e.key === "Enter" && handleSend()}
+          onKeyDown={handleKeyDown}
           style={{ flex: 1 }}
-          disabled={askMutation.isPending}
+          disabled={isStreaming}
+          autosize
+          minRows={1}
+          maxRows={4}
         />
         <Button
           onClick={() => handleSend()}
-          disabled={!input.trim() || askMutation.isPending}
-          loading={askMutation.isPending}
+          disabled={!input.trim() || isStreaming}
+          style={{ alignSelf: "flex-end" }}
         >
           Send
         </Button>
       </div>
+
+      <style>{`
+        @keyframes blink {
+          50% { opacity: 0; }
+        }
+        .chat-markdown p {
+          margin: 0 0 8px 0;
+        }
+        .chat-markdown p:last-child {
+          margin-bottom: 0;
+        }
+        .chat-markdown ul {
+          margin: 4px 0 8px 0;
+          padding-left: 18px;
+        }
+        .chat-markdown li {
+          margin-bottom: 2px;
+        }
+        .chat-markdown strong {
+          font-weight: 600;
+        }
+      `}</style>
     </div>
   );
 }

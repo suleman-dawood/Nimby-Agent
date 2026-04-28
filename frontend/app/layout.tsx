@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { ColorSchemeScript } from "@mantine/core";
 import Providers from "./providers";
 import AppShell from "@/components/layout/AppShell";
 import "./globals.css";
@@ -16,9 +15,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <head>
-        <ColorSchemeScript />
-      </head>
+      <head />
       <body>
         <Providers>
           <AppShell>{children}</AppShell>

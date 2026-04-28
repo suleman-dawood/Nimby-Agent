@@ -12,6 +12,7 @@ class BriefResponse(BaseModel):
     description: str | None
     markdown: str
     addresses: str | None
+    portal_url: str | None = None
 
 
 class CitationRequest(BaseModel):

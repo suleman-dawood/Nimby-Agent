@@ -65,6 +65,25 @@ def call_llm(prompt: str, system: str = "", retries: int = 3) -> str:
     return ""
 
 
+def stream_llm(prompt: str, system: str = ""):
+    """Stream Gemini Flash response via ADC. Yields text chunks."""
+    client = get_client()
+    config = types.GenerateContentConfig(
+        system_instruction=system if system else None,
+    )
+    try:
+        for chunk in client.models.generate_content_stream(
+            model=MODEL,
+            contents=prompt,
+            config=config,
+        ):
+            if chunk.text:
+                yield chunk.text
+    except Exception as e:
+        logger.warning("LLM stream failed: %s", e)
+        yield ""
+
+
 def normalize_citations(text: str) -> str:
     """Normalize LLM output to enforce single-page citation format.
 

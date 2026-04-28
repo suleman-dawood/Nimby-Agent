@@ -88,7 +88,9 @@ function markdownToHtml(md: string): string {
 }
 
 export default function BriefViewer({ markdown, onCitationClick }: Props) {
-  const { header, sections, references } = parseSections(markdown);
+  // Strip verification footer (---\n*Citations resolved...*)
+  const cleanMarkdown = markdown.replace(/\n---\n\*Citations resolved[\s\S]*$/, "").replace(/\n---\n\*Facts verified[\s\S]*$/, "");
+  const { header, sections } = parseSections(cleanMarkdown);
   const [activeTab, setActiveTab] = useState<string | null>(
     sections[0]?.heading || null
   );
@@ -170,39 +172,6 @@ export default function BriefViewer({ markdown, onCitationClick }: Props) {
         </Tabs>
       )}
 
-      {references && (
-        <div
-          style={{
-            padding: 16,
-            background: "var(--paper-warm)",
-            border: "1px solid var(--rule)",
-          }}
-        >
-          <Text
-            style={{
-              fontFamily: "'IBM Plex Mono', monospace",
-              fontSize: 10,
-              textTransform: "uppercase",
-              letterSpacing: "0.08em",
-              color: "var(--ink-faint)",
-              marginBottom: 8,
-            }}
-          >
-            References
-          </Text>
-          <Text
-            size="xs"
-            style={{
-              whiteSpace: "pre-wrap",
-              color: "var(--ink-light)",
-              fontFamily: "'IBM Plex Sans', sans-serif",
-              lineHeight: 1.6,
-            }}
-          >
-            {references}
-          </Text>
-        </div>
-      )}
     </Stack>
   );
 }

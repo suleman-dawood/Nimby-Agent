@@ -39,6 +39,7 @@ def get_brief(pp_number: str, session: Session = Depends(get_session)):
         description=pp.description,
         markdown=markdown,
         addresses=pp.addresses,
+        portal_url=pp.detail_url,
     )
 
 

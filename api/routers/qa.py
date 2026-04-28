@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
+import json
+
 from fastapi import APIRouter, Depends
+from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 
 from api.deps import get_session
@@ -31,6 +34,143 @@ def ask(req: AskRequest):
         verification_stats=VerificationStats(**result.verification_stats)
         if result.verification_stats
         else VerificationStats(),
+    )
+
+
+def _stream_qa(pp_number: str, question: str):
+    """Stream Q&A response as SSE events."""
+    from scraper.models import PP, create_db_engine, create_session
+    from pipeline.retrieve import retrieve
+    from pipeline.llm_utils import (
+        load_prompt, stream_llm, format_chunks, normalize_citations,
+        extract_citations, find_chunk,
+    )
+
+    engine = create_db_engine()
+    session = create_session(engine)
+
+    try:
+        pp = session.get(PP, pp_number)
+        if not pp:
+            yield f"data: {json.dumps({'type': 'error', 'content': 'Proposal not found'})}\n\n"
+            return
+
+        chunks = retrieve(pp_number, question, k=8, tier_filter=[1, 2])
+        if not chunks:
+            yield f"data: {json.dumps({'type': 'error', 'content': 'No relevant documents found.'})}\n\n"
+            return
+
+        chunk_text = format_chunks(chunks)
+        system = load_prompt("qa_system")
+        prompt = load_prompt("qa_user").format(
+            pp_number=pp_number,
+            title=pp.title or "",
+            question=question,
+            chunks=chunk_text,
+        )
+
+        full_text = ""
+        for token in stream_llm(prompt, system=system):
+            full_text += token
+            yield f"data: {json.dumps({'type': 'token', 'content': token})}\n\n"
+
+        # Post-stream: extract citations
+        full_text = normalize_citations(full_text)
+        citations = extract_citations(full_text)
+        cit_list = [
+            {"document_title": c["document_title"], "page": c["page"]}
+            for c in citations
+        ]
+        # Dedupe
+        seen = set()
+        unique_cits = []
+        for c in cit_list:
+            key = f"{c['document_title']}|{c['page']}"
+            if key not in seen:
+                seen.add(key)
+                unique_cits.append(c)
+
+        yield f"data: {json.dumps({'type': 'citations', 'citations': unique_cits})}\n\n"
+        yield "data: [DONE]\n\n"
+
+    finally:
+        session.close()
+
+
+def _stream_impact(pp_number: str, address: str, distance_km: float):
+    """Stream impact response as SSE events."""
+    from scraper.models import PP, create_db_engine, create_session
+    from pipeline.retrieve import retrieve
+    from pipeline.llm_utils import (
+        load_prompt, stream_llm, format_chunks, normalize_citations,
+        extract_citations,
+    )
+
+    engine = create_db_engine()
+    session = create_session(engine)
+
+    try:
+        pp = session.get(PP, pp_number)
+        if not pp:
+            yield f"data: {json.dumps({'type': 'error', 'content': 'Proposal not found'})}\n\n"
+            return
+
+        chunks = retrieve(pp_number, "impact residents nearby traffic noise height building", k=10, tier_filter=[1, 2])
+        if not chunks:
+            yield f"data: {json.dumps({'type': 'error', 'content': 'Not enough information to assess impact.'})}\n\n"
+            return
+
+        chunk_text = format_chunks(chunks)
+        system = load_prompt("impact_system")
+        prompt = load_prompt("impact_user").format(
+            pp_number=pp_number,
+            title=pp.title or "",
+            address=address,
+            distance_km=distance_km,
+            council=pp.council or "the relevant authority",
+            exhibition_end=pp.exhibition_end or "Not specified",
+            chunks=chunk_text,
+        )
+
+        full_text = ""
+        for token in stream_llm(prompt, system=system):
+            full_text += token
+            yield f"data: {json.dumps({'type': 'token', 'content': token})}\n\n"
+
+        full_text = normalize_citations(full_text)
+        citations = extract_citations(full_text)
+        cit_list = [
+            {"document_title": c["document_title"], "page": c["page"]}
+            for c in citations
+        ]
+        seen = set()
+        unique_cits = []
+        for c in cit_list:
+            key = f"{c['document_title']}|{c['page']}"
+            if key not in seen:
+                seen.add(key)
+                unique_cits.append(c)
+
+        yield f"data: {json.dumps({'type': 'citations', 'citations': unique_cits})}\n\n"
+        yield "data: [DONE]\n\n"
+
+    finally:
+        session.close()
+
+
+@router.post("/ask/stream")
+def ask_stream(req: AskRequest):
+    return StreamingResponse(
+        _stream_qa(req.pp_number, req.question),
+        media_type="text/event-stream",
+    )
+
+
+@router.post("/impact/stream")
+def impact_stream(req: ImpactRequest):
+    return StreamingResponse(
+        _stream_impact(req.pp_number, req.address, req.distance_km),
+        media_type="text/event-stream",
     )
 
 
