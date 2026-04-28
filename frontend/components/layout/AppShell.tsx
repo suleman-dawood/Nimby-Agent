@@ -23,7 +23,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <MantineAppShell
-      header={{ height: 52 }}
+      header={{ height: 56 }}
       navbar={{
         width: 200,
         breakpoint: "sm",
@@ -39,29 +39,51 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
               onClick={toggle}
               hiddenFrom="sm"
               size="sm"
-              color="var(--paper)"
+              color="white"
             />
-            <Text
-              style={{
-                fontFamily: "'DM Serif Display', serif",
-                fontSize: 20,
-                color: "var(--paper)",
-                letterSpacing: "-0.01em",
-              }}
-            >
-              Nimby Agent
-            </Text>
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <div
+                style={{
+                  width: 32,
+                  height: 32,
+                  background: "var(--nsw-white)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <Text
+                  style={{
+                    fontFamily: "'Public Sans', sans-serif",
+                    fontWeight: 700,
+                    fontSize: 14,
+                    color: "var(--nsw-brand-dark)",
+                    lineHeight: 1,
+                  }}
+                >
+                  NSW
+                </Text>
+              </div>
+              <Text
+                style={{
+                  fontFamily: "'Public Sans', sans-serif",
+                  fontSize: 18,
+                  fontWeight: 700,
+                  color: "var(--nsw-white)",
+                }}
+              >
+                Planning Proposals
+              </Text>
+            </div>
           </Group>
           <Text
             style={{
-              fontFamily: "'IBM Plex Mono', monospace",
-              fontSize: 10,
-              color: "var(--ink-faint)",
-              textTransform: "uppercase",
-              letterSpacing: "0.1em",
+              fontFamily: "'Public Sans', sans-serif",
+              fontSize: 12,
+              color: "rgba(255,255,255,0.7)",
             }}
           >
-            NSW Planning Proposals
+            Nimby Agent
           </Text>
         </Group>
       </MantineAppShell.Header>

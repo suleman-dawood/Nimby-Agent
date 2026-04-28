@@ -7,17 +7,17 @@ import type { NearbyPP } from "@/lib/api";
 const MAP_STYLES = {
   width: "100%",
   height: "420px",
-  border: "2px solid var(--rule-heavy)",
+  border: "2px solid var(--nsw-brand-dark)",
 };
 
 const MAP_VISUAL_STYLES = [
-  { elementType: "geometry", stylers: [{ color: "#e8e4dd" }] },
-  { elementType: "labels.text.fill", stylers: [{ color: "#4a4a4a" }] },
-  { elementType: "labels.text.stroke", stylers: [{ color: "#f5f2ed" }] },
-  { featureType: "road", elementType: "geometry", stylers: [{ color: "#d4cfc7" }] },
-  { featureType: "road", elementType: "geometry.stroke", stylers: [{ color: "#c4bfb6" }] },
-  { featureType: "water", elementType: "geometry", stylers: [{ color: "#b8ccd4" }] },
-  { featureType: "poi.park", elementType: "geometry", stylers: [{ color: "#c8d4c0" }] },
+  { elementType: "geometry", stylers: [{ color: "#f2f2f2" }] },
+  { elementType: "labels.text.fill", stylers: [{ color: "#22272B" }] },
+  { elementType: "labels.text.stroke", stylers: [{ color: "#ffffff" }] },
+  { featureType: "road", elementType: "geometry", stylers: [{ color: "#e4e4e6" }] },
+  { featureType: "road.highway", elementType: "geometry", stylers: [{ color: "#CDD3D6" }] },
+  { featureType: "water", elementType: "geometry", stylers: [{ color: "#CBEDFD" }] },
+  { featureType: "poi.park", elementType: "geometry", stylers: [{ color: "#d4e8d0" }] },
   { featureType: "poi", elementType: "labels", stylers: [{ visibility: "off" }] },
 ];
 
@@ -51,9 +51,9 @@ export default function ProposalMap({
     return {
       path: google.maps.SymbolPath.CIRCLE,
       scale: 8,
-      fillColor: "#b8432f",
+      fillColor: "#D7153A",
       fillOpacity: 1,
-      strokeColor: "#1a1a1a",
+      strokeColor: "#002664",
       strokeWeight: 2,
     };
   }, []);
@@ -63,9 +63,9 @@ export default function ProposalMap({
     return {
       path: google.maps.SymbolPath.BACKWARD_CLOSED_ARROW,
       scale: 5,
-      fillColor: "#1a1a1a",
+      fillColor: "#002664",
       fillOpacity: 0.9,
-      strokeColor: "#1a1a1a",
+      strokeColor: "#002664",
       strokeWeight: 1,
     };
   }, []);
@@ -131,14 +131,14 @@ export default function ProposalMap({
         >
           <div
             style={{
-              fontFamily: "'IBM Plex Sans', sans-serif",
+              fontFamily: "'Public Sans', Arial, sans-serif",
               padding: "8px 4px",
               maxWidth: 220,
             }}
           >
             <div
               style={{
-                fontFamily: "'IBM Plex Mono', monospace",
+                fontFamily: "'Public Sans', Arial, sans-serif",
                 fontSize: 11,
                 fontWeight: 600,
                 textTransform: "uppercase",
@@ -156,8 +156,8 @@ export default function ProposalMap({
             <div
               style={{
                 fontSize: 11,
-                color: "var(--ink-faint)",
-                borderTop: "1px solid var(--rule)",
+                color: "var(--nsw-grey-04)",
+                borderTop: "1px solid var(--nsw-grey-02)",
                 paddingTop: 4,
                 marginTop: 4,
               }}

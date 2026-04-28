@@ -47,11 +47,11 @@ export default function SearchPage() {
         <div>
           <Text
             style={{
-              fontFamily: "'IBM Plex Mono', monospace",
+              fontFamily: "'Public Sans', Arial, sans-serif",
               fontSize: 11,
               textTransform: "uppercase",
               letterSpacing: "0.1em",
-              color: "var(--ink-faint)",
+              color: "var(--nsw-grey-04)",
               marginBottom: 8,
             }}
           >
@@ -68,11 +68,11 @@ export default function SearchPage() {
             style={{
               width: 60,
               height: 3,
-              background: "var(--accent)",
+              background: "var(--nsw-brand-dark)",
               marginBottom: 12,
             }}
           />
-          <Text style={{ color: "var(--ink-light)", fontSize: 15 }}>
+          <Text style={{ color: "var(--nsw-text-light)", fontSize: 15 }}>
             Enter your address to discover planning proposals currently on
             public exhibition in your area. Review the documents, understand
             the impact, and have your say.
@@ -81,9 +81,9 @@ export default function SearchPage() {
 
         <div
           style={{
-            border: "2px solid var(--rule-heavy)",
+            border: "2px solid var(--nsw-brand-dark)",
             padding: 24,
-            background: "var(--paper-bright)",
+            background: "var(--nsw-white)",
           }}
         >
           <MapProvider>

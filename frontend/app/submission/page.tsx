@@ -89,6 +89,8 @@ function SubmissionForm() {
 
   const onAutocompleteLoad = (ac: google.maps.places.Autocomplete) => {
     autocompleteRef.current = ac;
+    ac.setBounds({ north: -28.15, south: -37.51, east: 153.64, west: 140.99 });
+    ac.setOptions({ strictBounds: true });
   };
 
   const onPlaceChanged = () => {
@@ -104,11 +106,11 @@ function SubmissionForm() {
         <div>
           <Text
             style={{
-              fontFamily: "'IBM Plex Mono', monospace",
+              fontFamily: "'Public Sans', Arial, sans-serif",
               fontSize: 11,
               textTransform: "uppercase",
               letterSpacing: "0.1em",
-              color: "var(--ink-faint)",
+              color: "var(--nsw-grey-04)",
               marginBottom: 8,
             }}
           >
@@ -121,11 +123,11 @@ function SubmissionForm() {
             style={{
               width: 60,
               height: 3,
-              background: "var(--accent)",
+              background: "var(--nsw-brand-dark)",
               margin: "8px 0 4px",
             }}
           />
-          <Text style={{ color: "var(--ink-light)", fontSize: 14 }}>
+          <Text style={{ color: "var(--nsw-text-light)", fontSize: 14 }}>
             Select your concerns and we&apos;ll draft an evidence-based
             submission for{" "}
             <strong>{ppNumber || "the proposal"}</strong>, citing the
@@ -145,17 +147,17 @@ function SubmissionForm() {
             <div
               style={{
                 padding: 20,
-                background: "var(--paper-bright)",
-                border: "1px solid var(--rule)",
+                background: "var(--nsw-white)",
+                border: "1px solid var(--nsw-grey-02)",
               }}
             >
               <Text
                 style={{
-                  fontFamily: "'IBM Plex Mono', monospace",
+                  fontFamily: "'Public Sans', Arial, sans-serif",
                   fontSize: 10,
                   textTransform: "uppercase",
                   letterSpacing: "0.08em",
-                  color: "var(--ink-faint)",
+                  color: "var(--nsw-grey-04)",
                   marginBottom: 12,
                 }}
               >
@@ -226,7 +228,7 @@ function SubmissionForm() {
                   ml="sm"
                   style={{
                     fontSize: 12,
-                    color: "var(--ink-faint)",
+                    color: "var(--nsw-grey-04)",
                   }}
                 >
                   Generating evidence-based submission...
@@ -236,14 +238,14 @@ function SubmissionForm() {
 
             {submitMutation.data && (
               <>
-                <div style={{ borderTop: "2px solid var(--rule-heavy)" }} />
+                <div style={{ borderTop: "2px solid var(--nsw-brand-dark)" }} />
 
                 <div
                   style={{
                     padding: 24,
-                    background: "var(--paper-bright)",
-                    border: "1px solid var(--rule)",
-                    borderLeft: "4px solid var(--ink)",
+                    background: "var(--nsw-white)",
+                    border: "1px solid var(--nsw-grey-02)",
+                    borderLeft: "4px solid var(--nsw-text)",
                   }}
                 >
                   <Text
@@ -251,7 +253,7 @@ function SubmissionForm() {
                     style={{
                       whiteSpace: "pre-wrap",
                       lineHeight: 1.75,
-                      color: "var(--ink)",
+                      color: "var(--nsw-text)",
                     }}
                   >
                     {submitMutation.data.markdown}
@@ -262,17 +264,17 @@ function SubmissionForm() {
                   <div
                     style={{
                       padding: 16,
-                      background: "var(--paper-warm)",
-                      border: "1px solid var(--rule)",
+                      background: "var(--nsw-grey-01)",
+                      border: "1px solid var(--nsw-grey-02)",
                     }}
                   >
                     <Text
                       style={{
-                        fontFamily: "'IBM Plex Mono', monospace",
+                        fontFamily: "'Public Sans', Arial, sans-serif",
                         fontSize: 10,
                         textTransform: "uppercase",
                         letterSpacing: "0.08em",
-                        color: "var(--ink-faint)",
+                        color: "var(--nsw-grey-04)",
                         marginBottom: 8,
                       }}
                     >
@@ -283,7 +285,7 @@ function SubmissionForm() {
                         key={`${c.document_title}|${c.page}`}
                         style={{
                           fontSize: 11,
-                          color: "var(--accent)",
+                          color: "var(--nsw-brand-dark)",
                           cursor: "pointer",
                           textDecoration: "underline",
                           marginBottom: 2,
@@ -331,7 +333,7 @@ function SubmissionForm() {
                   <Text
                     style={{
                       fontSize: 12,
-                      color: "var(--ink-faint)",
+                      color: "var(--nsw-grey-04)",
                       lineHeight: 1.5,
                     }}
                   >

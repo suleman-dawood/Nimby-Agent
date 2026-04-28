@@ -34,7 +34,7 @@ export default function PPCard({ pp, onClick }: Props) {
       <Group justify="space-between" mb={8}>
         <Text
           style={{
-            fontFamily: "'IBM Plex Mono', monospace",
+            fontFamily: "'Public Sans', Arial, sans-serif",
             fontSize: 11,
             fontWeight: 600,
             textTransform: "uppercase",
@@ -50,14 +50,14 @@ export default function PPCard({ pp, onClick }: Props) {
         size="sm"
         lineClamp={2}
         mb={8}
-        style={{ fontFamily: "'DM Serif Display', serif", fontSize: 15 }}
+        style={{ fontFamily: "'Public Sans', Arial, sans-serif", fontSize: 15 }}
       >
         {pp.title || "Untitled proposal"}
       </Text>
 
       <div
         style={{
-          borderTop: "1px solid var(--rule)",
+          borderTop: "1px solid var(--nsw-grey-02)",
           paddingTop: 8,
           display: "flex",
           justifyContent: "space-between",
@@ -66,8 +66,8 @@ export default function PPCard({ pp, onClick }: Props) {
         <Text
           style={{
             fontSize: 11,
-            color: "var(--ink-faint)",
-            fontFamily: "'IBM Plex Sans', sans-serif",
+            color: "var(--nsw-grey-04)",
+            fontFamily: "'Public Sans', Arial, sans-serif",
           }}
         >
           {pp.council || "Unknown council"}
@@ -75,8 +75,8 @@ export default function PPCard({ pp, onClick }: Props) {
         <Text
           style={{
             fontSize: 11,
-            color: "var(--ink-faint)",
-            fontFamily: "'IBM Plex Mono', monospace",
+            color: "var(--nsw-grey-04)",
+            fontFamily: "'Public Sans', Arial, sans-serif",
           }}
         >
           {distanceLabel(pp.distance_km, pp.geo_source)}

@@ -54,11 +54,11 @@ export default function ResultsPage() {
         <div>
           <Text
             style={{
-              fontFamily: "'IBM Plex Mono', monospace",
+              fontFamily: "'Public Sans', Arial, sans-serif",
               fontSize: 11,
               textTransform: "uppercase",
               letterSpacing: "0.1em",
-              color: "var(--ink-faint)",
+              color: "var(--nsw-grey-04)",
               marginBottom: 8,
             }}
           >
@@ -71,11 +71,11 @@ export default function ResultsPage() {
             style={{
               width: 60,
               height: 3,
-              background: "var(--accent)",
+              background: "var(--nsw-brand-dark)",
               margin: "8px 0 4px",
             }}
           />
-          <Text style={{ fontSize: 13, color: "var(--ink-light)" }}>
+          <Text style={{ fontSize: 13, color: "var(--nsw-text-light)" }}>
             {data.results.length} proposal{data.results.length !== 1 && "s"}{" "}
             within range
             {data.lga && (
@@ -100,12 +100,12 @@ export default function ResultsPage() {
           <>
             <Text
               style={{
-                fontFamily: "'IBM Plex Mono', monospace",
+                fontFamily: "'Public Sans', Arial, sans-serif",
                 fontSize: 11,
                 textTransform: "uppercase",
                 letterSpacing: "0.08em",
-                color: "var(--ink-faint)",
-                borderBottom: "2px solid var(--rule-heavy)",
+                color: "var(--nsw-grey-04)",
+                borderBottom: "2px solid var(--nsw-brand-dark)",
                 paddingBottom: 8,
               }}
             >
@@ -125,12 +125,12 @@ export default function ResultsPage() {
           <>
             <Text
               style={{
-                fontFamily: "'IBM Plex Mono', monospace",
+                fontFamily: "'Public Sans', Arial, sans-serif",
                 fontSize: 11,
                 textTransform: "uppercase",
                 letterSpacing: "0.08em",
-                color: "var(--ink-faint)",
-                borderBottom: "2px solid var(--rule-heavy)",
+                color: "var(--nsw-grey-04)",
+                borderBottom: "2px solid var(--nsw-brand-dark)",
                 paddingBottom: 8,
                 marginTop: 16,
               }}

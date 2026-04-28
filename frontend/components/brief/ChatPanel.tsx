@@ -13,6 +13,7 @@ import {
 } from "@mantine/core";
 import { useQuery } from "@tanstack/react-query";
 import { useState, useRef, useEffect, useCallback } from "react";
+import ReactMarkdown from "react-markdown";
 import {
   getCitation,
   getSuggestions,
@@ -41,30 +42,6 @@ interface Props {
 }
 
 const CITE_RE = /\[doc:\s*.+?\s*\|\s*p\.?\s*\d+\]/g;
-
-function renderMarkdown(text: string) {
-  // Strip citation markers
-  let clean = text.replace(CITE_RE, "");
-
-  // Bold
-  clean = clean.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
-  // Italic
-  clean = clean.replace(/\*(.+?)\*/g, "<em>$1</em>");
-  // Bullet lists
-  clean = clean.replace(/^[-•]\s+(.+)$/gm, "<li>$1</li>");
-  clean = clean.replace(new RegExp("(<li>.*</li>\\n?)+", "gs"), (match) => `<ul>${match}</ul>`);
-  // Paragraphs (double newline)
-  clean = clean
-    .split(/\n{2,}/)
-    .map((p) => p.trim())
-    .filter(Boolean)
-    .map((p) => (p.startsWith("<ul>") || p.startsWith("<li>") ? p : `<p>${p}</p>`))
-    .join("");
-  // Single newlines within paragraphs
-  clean = clean.replace(/(?<!<\/li>)\n(?!<)/g, "<br />");
-
-  return clean;
-}
 
 export default function ChatPanel({
   ppNumber,
@@ -165,15 +142,15 @@ export default function ChatPanel({
     [scrollToBottom]
   );
 
-  // Load impact on first open
+  // Start loading impact immediately on mount (even when collapsed)
   useEffect(() => {
-    if (opened && !impactLoaded && address) {
+    if (!impactLoaded && address) {
       setImpactLoaded(true);
       startStream((cb) =>
         streamImpact(ppNumber, address, distanceKm, cb)
       );
     }
-  }, [opened, impactLoaded, address, ppNumber, distanceKm, startStream]);
+  }, [impactLoaded, address, ppNumber, distanceKm, startStream]);
 
   const handleSend = (q?: string) => {
     const question = q || input;
@@ -205,20 +182,20 @@ export default function ChatPanel({
           right: 0,
           top: "50%",
           transform: "translateY(-50%)",
-          background: "var(--ink)",
-          color: "var(--paper)",
+          background: "var(--nsw-text)",
+          color: "var(--nsw-white)",
           padding: "16px 8px",
           cursor: "pointer",
           writingMode: "vertical-rl",
           textOrientation: "mixed",
-          fontFamily: "'IBM Plex Mono', monospace",
+          fontFamily: "'Public Sans', Arial, sans-serif",
           fontSize: 11,
           textTransform: "uppercase",
           letterSpacing: "0.1em",
           zIndex: 100,
         }}
       >
-        Chat
+        {isStreaming ? "Loading..." : messages.length > 0 ? "Chat ready" : "Chat"}
       </div>
     );
   }
@@ -231,8 +208,8 @@ export default function ChatPanel({
         top: 52,
         bottom: 0,
         width: 380,
-        background: "var(--paper-bright)",
-        borderLeft: "2px solid var(--rule-heavy)",
+        background: "var(--nsw-white)",
+        borderLeft: "2px solid var(--nsw-brand-dark)",
         display: "flex",
         flexDirection: "column",
         zIndex: 100,
@@ -242,7 +219,7 @@ export default function ChatPanel({
       <div
         style={{
           padding: "12px 16px",
-          borderBottom: "2px solid var(--rule-heavy)",
+          borderBottom: "2px solid var(--nsw-brand-dark)",
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
@@ -250,7 +227,7 @@ export default function ChatPanel({
       >
         <Text
           style={{
-            fontFamily: "'DM Serif Display', serif",
+            fontFamily: "'Public Sans', Arial, sans-serif",
             fontSize: 16,
           }}
         >
@@ -276,7 +253,7 @@ export default function ChatPanel({
               <Loader size="sm" color="dark" />
               <Text
                 ml="sm"
-                style={{ fontSize: 12, color: "var(--ink-faint)" }}
+                style={{ fontSize: 12, color: "var(--nsw-grey-04)" }}
               >
                 Analysing impact on your address...
               </Text>
@@ -288,8 +265,8 @@ export default function ChatPanel({
               {msg.role === "user" ? (
                 <div
                   style={{
-                    background: "var(--ink)",
-                    color: "var(--paper)",
+                    background: "var(--nsw-text)",
+                    color: "var(--nsw-white)",
                     padding: "10px 14px",
                     fontSize: 13,
                     marginLeft: 40,
@@ -300,19 +277,18 @@ export default function ChatPanel({
               ) : (
                 <div
                   style={{
-                    background: "var(--paper-warm)",
-                    border: "1px solid var(--rule)",
+                    background: "var(--nsw-grey-01)",
+                    border: "1px solid var(--nsw-grey-02)",
                     padding: "12px 14px",
                     fontSize: 13,
                     lineHeight: 1.7,
                   }}
                 >
-                  <div
-                    className="chat-markdown"
-                    dangerouslySetInnerHTML={{
-                      __html: renderMarkdown(msg.content),
-                    }}
-                  />
+                  <div className="chat-markdown">
+                    <ReactMarkdown>
+                      {msg.content.replace(CITE_RE, "")}
+                    </ReactMarkdown>
+                  </div>
 
                   {msg.streaming && (
                     <span
@@ -320,7 +296,7 @@ export default function ChatPanel({
                         display: "inline-block",
                         width: 6,
                         height: 14,
-                        background: "var(--ink)",
+                        background: "var(--nsw-text)",
                         marginLeft: 2,
                         animation: "blink 1s step-end infinite",
                       }}
@@ -332,16 +308,16 @@ export default function ChatPanel({
                       style={{
                         marginTop: 10,
                         paddingTop: 8,
-                        borderTop: "1px solid var(--rule)",
+                        borderTop: "1px solid var(--nsw-grey-02)",
                       }}
                     >
                       <Text
                         style={{
-                          fontFamily: "'IBM Plex Mono', monospace",
+                          fontFamily: "'Public Sans', Arial, sans-serif",
                           fontSize: 9,
                           textTransform: "uppercase",
                           letterSpacing: "0.08em",
-                          color: "var(--ink-faint)",
+                          color: "var(--nsw-grey-04)",
                           marginBottom: 4,
                         }}
                       >
@@ -352,7 +328,7 @@ export default function ChatPanel({
                           key={`${c.document_title}|${c.page}`}
                           style={{
                             fontSize: 10,
-                            color: "var(--accent)",
+                            color: "var(--nsw-brand-dark)",
                             cursor: "pointer",
                             textDecoration: "underline",
                           }}
@@ -388,7 +364,7 @@ export default function ChatPanel({
           <div
             style={{
               padding: "8px 16px",
-              borderTop: "1px solid var(--rule)",
+              borderTop: "1px solid var(--nsw-grey-02)",
             }}
           >
             <Group gap={4} wrap="wrap">
@@ -410,7 +386,7 @@ export default function ChatPanel({
       <div
         style={{
           padding: "12px 16px",
-          borderTop: "2px solid var(--rule-heavy)",
+          borderTop: "2px solid var(--nsw-brand-dark)",
           display: "flex",
           gap: 8,
           alignItems: "flex-end",

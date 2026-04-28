@@ -9,11 +9,11 @@ export default function AboutPage() {
         <div>
           <Text
             style={{
-              fontFamily: "'IBM Plex Mono', monospace",
+              fontFamily: "'Public Sans', Arial, sans-serif",
               fontSize: 11,
               textTransform: "uppercase",
               letterSpacing: "0.1em",
-              color: "var(--ink-faint)",
+              color: "var(--nsw-grey-04)",
               marginBottom: 8,
             }}
           >
@@ -26,13 +26,13 @@ export default function AboutPage() {
             style={{
               width: 60,
               height: 3,
-              background: "var(--accent)",
+              background: "var(--nsw-brand-dark)",
               margin: "12px 0",
             }}
           />
         </div>
 
-        <Text style={{ lineHeight: 1.75, color: "var(--ink)", fontSize: 15 }}>
+        <Text style={{ lineHeight: 1.75, color: "var(--nsw-text)", fontSize: 15 }}>
           Nimby Agent helps NSW residents understand planning proposals on
           exhibition in their area. It reads the actual proposal documents,
           extracts key information, and presents it in plain language with
@@ -41,17 +41,17 @@ export default function AboutPage() {
 
         <div
           style={{
-            borderTop: "2px solid var(--rule-heavy)",
+            borderTop: "2px solid var(--nsw-brand-dark)",
             paddingTop: 20,
           }}
         >
           <Text
             style={{
-              fontFamily: "'IBM Plex Mono', monospace",
+              fontFamily: "'Public Sans', Arial, sans-serif",
               fontSize: 10,
               textTransform: "uppercase",
               letterSpacing: "0.08em",
-              color: "var(--ink-faint)",
+              color: "var(--nsw-grey-04)",
               marginBottom: 12,
             }}
           >
@@ -59,7 +59,7 @@ export default function AboutPage() {
           </Text>
           <List
             spacing="sm"
-            style={{ color: "var(--ink)", fontSize: 14, lineHeight: 1.6 }}
+            style={{ color: "var(--nsw-text)", fontSize: 14, lineHeight: 1.6 }}
           >
             <List.Item>
               <strong>Search</strong> &mdash; Enter your address to find
@@ -82,17 +82,17 @@ export default function AboutPage() {
 
         <div
           style={{
-            borderTop: "2px solid var(--rule-heavy)",
+            borderTop: "2px solid var(--nsw-brand-dark)",
             paddingTop: 20,
           }}
         >
           <Text
             style={{
-              fontFamily: "'IBM Plex Mono', monospace",
+              fontFamily: "'Public Sans', Arial, sans-serif",
               fontSize: 10,
               textTransform: "uppercase",
               letterSpacing: "0.08em",
-              color: "var(--ink-faint)",
+              color: "var(--nsw-grey-04)",
               marginBottom: 12,
             }}
           >
@@ -100,7 +100,7 @@ export default function AboutPage() {
           </Text>
           <List
             spacing="sm"
-            style={{ color: "var(--ink)", fontSize: 14, lineHeight: 1.6 }}
+            style={{ color: "var(--nsw-text)", fontSize: 14, lineHeight: 1.6 }}
           >
             <List.Item>
               All data from the NSW Planning Portal

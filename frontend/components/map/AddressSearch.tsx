@@ -4,6 +4,14 @@ import { Autocomplete } from "@react-google-maps/api";
 import { TextInput, Button, Group } from "@mantine/core";
 import { useState, useRef } from "react";
 
+// NSW bounding box — strongly bias results to NSW
+const NSW_BOUNDS = {
+  north: -28.15,
+  south: -37.51,
+  east: 153.64,
+  west: 140.99,
+};
+
 interface Props {
   onPlaceSelected: (lat: number, lng: number, address: string) => void;
   loading?: boolean;
@@ -15,6 +23,9 @@ export default function AddressSearch({ onPlaceSelected, loading }: Props) {
 
   const onLoad = (autocomplete: google.maps.places.Autocomplete) => {
     autocompleteRef.current = autocomplete;
+    // Set bounds to NSW and restrict to them
+    autocomplete.setBounds(NSW_BOUNDS);
+    autocomplete.setOptions({ strictBounds: true });
   };
 
   const onPlaceChanged = () => {

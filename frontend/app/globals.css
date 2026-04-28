@@ -1,20 +1,22 @@
 @import "@mantine/core/styles.css";
-@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Public+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap');
 
 :root {
-  --ink: #1a1a1a;
-  --ink-light: #4a4a4a;
-  --ink-faint: #8a8a8a;
-  --paper: #f5f2ed;
-  --paper-warm: #ebe7e0;
-  --paper-bright: #faf8f5;
-  --rule: #c4bfb6;
-  --rule-heavy: #1a1a1a;
-  --accent: #b8432f;
-  --accent-dark: #922e1e;
-  --caution: #c4941a;
-  --positive: #2d6a4f;
-  --negative: #b8432f;
+  --nsw-brand-dark: #002664;
+  --nsw-brand-blue: #146CFD;
+  --nsw-brand-light: #CBEDFD;
+  --nsw-brand-accent: #D7153A;
+  --nsw-text: #22272B;
+  --nsw-text-light: #495054;
+  --nsw-grey-01: #F2F2F2;
+  --nsw-grey-02: #E4E4E6;
+  --nsw-grey-03: #CDD3D6;
+  --nsw-grey-04: #A0A5AE;
+  --nsw-white: #FFFFFF;
+  --nsw-success: #008A07;
+  --nsw-warning: #C95000;
+  --nsw-error: #B81237;
+  --nsw-link: #002664;
 }
 
 * {
@@ -28,37 +30,36 @@ html, body {
 }
 
 body {
-  background: var(--paper);
-  color: var(--ink);
-  font-family: 'IBM Plex Sans', sans-serif;
-  font-size: 15px;
-  line-height: 1.6;
+  background: var(--nsw-white);
+  color: var(--nsw-text);
+  font-family: 'Public Sans', Arial, sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
   -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
 }
 
-/* Override Mantine defaults */
+/* AppShell */
 .mantine-AppShell-root {
-  background: var(--paper) !important;
+  background: var(--nsw-white) !important;
 }
 
 .mantine-AppShell-header {
-  background: var(--ink) !important;
-  border-bottom: none !important;
+  background: var(--nsw-brand-dark) !important;
+  border-bottom: 4px solid var(--nsw-brand-accent) !important;
   border-radius: 0 !important;
 }
 
 .mantine-AppShell-navbar {
-  background: var(--paper-bright) !important;
-  border-right: 1px solid var(--rule) !important;
+  background: var(--nsw-grey-01) !important;
+  border-right: 1px solid var(--nsw-grey-02) !important;
   border-radius: 0 !important;
 }
 
 .mantine-AppShell-main {
-  background: var(--paper) !important;
+  background: var(--nsw-white) !important;
 }
 
-/* Kill all border-radius globally */
+/* Zero border-radius */
 .mantine-Paper-root,
 .mantine-Card-root,
 .mantine-Alert-root,
@@ -80,246 +81,237 @@ body {
 /* Typography */
 h1, h2, h3, h4, h5, h6,
 .mantine-Title-root {
-  font-family: 'DM Serif Display', serif !important;
-  color: var(--ink) !important;
-  letter-spacing: -0.01em;
+  font-family: 'Public Sans', Arial, sans-serif !important;
+  color: var(--nsw-brand-dark) !important;
+  font-weight: 700 !important;
 }
 
 /* Buttons */
 .mantine-Button-root {
-  font-family: 'IBM Plex Sans', sans-serif !important;
+  font-family: 'Public Sans', Arial, sans-serif !important;
   font-weight: 600 !important;
-  text-transform: uppercase !important;
-  letter-spacing: 0.06em !important;
-  font-size: 12px !important;
+  font-size: 14px !important;
   transition: all 0.15s ease !important;
 }
 
 .mantine-Button-root[data-variant="filled"] {
-  background: var(--ink) !important;
-  color: var(--paper) !important;
-  border: 2px solid var(--ink) !important;
+  background: var(--nsw-brand-dark) !important;
+  color: var(--nsw-white) !important;
+  border: 2px solid var(--nsw-brand-dark) !important;
 }
 
 .mantine-Button-root[data-variant="filled"]:hover {
-  background: transparent !important;
-  color: var(--ink) !important;
+  background: var(--nsw-brand-blue) !important;
+  border-color: var(--nsw-brand-blue) !important;
 }
 
 .mantine-Button-root[data-variant="outline"] {
-  border: 2px solid var(--ink) !important;
-  color: var(--ink) !important;
+  border: 2px solid var(--nsw-brand-dark) !important;
+  color: var(--nsw-brand-dark) !important;
   background: transparent !important;
 }
 
 .mantine-Button-root[data-variant="outline"]:hover {
-  background: var(--ink) !important;
-  color: var(--paper) !important;
+  background: var(--nsw-brand-dark) !important;
+  color: var(--nsw-white) !important;
 }
 
 .mantine-Button-root[data-variant="light"] {
-  background: var(--paper-warm) !important;
-  color: var(--ink) !important;
-  border: 1px solid var(--rule) !important;
+  background: var(--nsw-brand-light) !important;
+  color: var(--nsw-brand-dark) !important;
+  border: 1px solid var(--nsw-grey-03) !important;
 }
 
 .mantine-Button-root[data-variant="light"]:hover {
-  background: var(--ink) !important;
-  color: var(--paper) !important;
-  border-color: var(--ink) !important;
+  background: var(--nsw-brand-dark) !important;
+  color: var(--nsw-white) !important;
 }
 
 /* Inputs */
 .mantine-TextInput-input,
 .mantine-Textarea-input {
-  border: 2px solid var(--rule) !important;
-  background: var(--paper-bright) !important;
-  font-family: 'IBM Plex Sans', sans-serif !important;
-  transition: border-color 0.15s ease !important;
+  border: 2px solid var(--nsw-grey-03) !important;
+  background: var(--nsw-white) !important;
+  font-family: 'Public Sans', Arial, sans-serif !important;
 }
 
 .mantine-TextInput-input:focus,
 .mantine-Textarea-input:focus {
-  border-color: var(--ink) !important;
+  border-color: var(--nsw-brand-dark) !important;
+  outline: 3px solid var(--nsw-brand-light) !important;
 }
 
 .mantine-TextInput-label,
 .mantine-Textarea-label {
-  font-family: 'IBM Plex Sans', sans-serif !important;
+  font-family: 'Public Sans', Arial, sans-serif !important;
   font-weight: 600 !important;
-  font-size: 11px !important;
-  text-transform: uppercase !important;
-  letter-spacing: 0.08em !important;
-  color: var(--ink-light) !important;
-  margin-bottom: 6px !important;
+  font-size: 14px !important;
+  color: var(--nsw-text) !important;
+  margin-bottom: 4px !important;
 }
 
-/* Cards and Paper */
+/* Cards */
 .mantine-Card-root,
 .mantine-Paper-root {
-  background: var(--paper-bright) !important;
-  border: 1px solid var(--rule) !important;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
+  background: var(--nsw-white) !important;
+  border: 1px solid var(--nsw-grey-02) !important;
 }
 
 .mantine-Card-root:hover {
-  border-color: var(--ink) !important;
-  box-shadow: 4px 4px 0 var(--rule) !important;
+  border-color: var(--nsw-brand-dark) !important;
+  box-shadow: 0 2px 8px rgba(0, 38, 100, 0.1) !important;
 }
 
 /* Badges */
 .mantine-Badge-root {
-  font-family: 'IBM Plex Mono', monospace !important;
-  font-size: 10px !important;
-  font-weight: 500 !important;
-  text-transform: uppercase !important;
-  letter-spacing: 0.08em !important;
+  font-family: 'Public Sans', Arial, sans-serif !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
   padding: 4px 10px !important;
   border: 1px solid !important;
 }
 
 .mantine-Badge-root[data-variant="filled"][data-color="green"] {
   background: transparent !important;
-  color: var(--positive) !important;
-  border-color: var(--positive) !important;
+  color: var(--nsw-success) !important;
+  border-color: var(--nsw-success) !important;
 }
 
 .mantine-Badge-root[data-variant="filled"][data-color="orange"] {
   background: transparent !important;
-  color: var(--caution) !important;
-  border-color: var(--caution) !important;
+  color: var(--nsw-warning) !important;
+  border-color: var(--nsw-warning) !important;
 }
 
 .mantine-Badge-root[data-variant="filled"][data-color="red"] {
   background: transparent !important;
-  color: var(--negative) !important;
-  border-color: var(--negative) !important;
+  color: var(--nsw-error) !important;
+  border-color: var(--nsw-error) !important;
 }
 
 .mantine-Badge-root[data-variant="filled"][data-color="gray"] {
   background: transparent !important;
-  color: var(--ink-faint) !important;
-  border-color: var(--rule) !important;
+  color: var(--nsw-grey-04) !important;
+  border-color: var(--nsw-grey-03) !important;
 }
 
 /* Tabs */
 .mantine-Tabs-list {
-  border-bottom: 2px solid var(--rule-heavy) !important;
+  border-bottom: 2px solid var(--nsw-grey-02) !important;
   gap: 0 !important;
 }
 
 .mantine-Tabs-tab {
-  font-family: 'IBM Plex Sans', sans-serif !important;
+  font-family: 'Public Sans', Arial, sans-serif !important;
   font-weight: 600 !important;
-  font-size: 12px !important;
-  text-transform: uppercase !important;
-  letter-spacing: 0.06em !important;
-  color: var(--ink-faint) !important;
+  font-size: 14px !important;
+  color: var(--nsw-text-light) !important;
   border-bottom: 3px solid transparent !important;
   padding: 12px 20px !important;
-  transition: all 0.15s ease !important;
 }
 
 .mantine-Tabs-tab:hover {
-  color: var(--ink) !important;
+  color: var(--nsw-brand-dark) !important;
   background: transparent !important;
 }
 
 .mantine-Tabs-tab[data-active] {
-  color: var(--ink) !important;
-  border-bottom-color: var(--accent) !important;
+  color: var(--nsw-brand-dark) !important;
+  border-bottom-color: var(--nsw-brand-dark) !important;
 }
 
 /* NavLinks */
 .mantine-NavLink-root {
-  font-family: 'IBM Plex Sans', sans-serif !important;
+  font-family: 'Public Sans', Arial, sans-serif !important;
   font-weight: 500 !important;
-  font-size: 13px !important;
-  text-transform: uppercase !important;
-  letter-spacing: 0.06em !important;
+  font-size: 14px !important;
   padding: 10px 12px !important;
-  color: var(--ink-light) !important;
+  color: var(--nsw-text-light) !important;
   border-left: 3px solid transparent !important;
-  transition: all 0.15s ease !important;
 }
 
 .mantine-NavLink-root:hover {
-  background: var(--paper-warm) !important;
-  color: var(--ink) !important;
+  background: var(--nsw-grey-02) !important;
+  color: var(--nsw-text) !important;
 }
 
 .mantine-NavLink-root[data-active] {
   background: transparent !important;
-  color: var(--ink) !important;
-  border-left-color: var(--accent) !important;
-  font-weight: 600 !important;
+  color: var(--nsw-brand-dark) !important;
+  border-left-color: var(--nsw-brand-dark) !important;
+  font-weight: 700 !important;
 }
 
 /* Chips */
 .mantine-Chip-label {
-  font-family: 'IBM Plex Sans', sans-serif !important;
-  font-size: 12px !important;
-  border: 1px solid var(--rule) !important;
-  background: var(--paper-bright) !important;
-  color: var(--ink) !important;
-  transition: all 0.15s ease !important;
+  font-family: 'Public Sans', Arial, sans-serif !important;
+  font-size: 13px !important;
+  border: 1px solid var(--nsw-grey-03) !important;
+  background: var(--nsw-white) !important;
+  color: var(--nsw-text) !important;
 }
 
 .mantine-Chip-label:hover {
-  border-color: var(--ink) !important;
+  border-color: var(--nsw-brand-dark) !important;
 }
 
 .mantine-Chip-label[data-checked] {
-  background: var(--ink) !important;
-  color: var(--paper) !important;
-  border-color: var(--ink) !important;
+  background: var(--nsw-brand-dark) !important;
+  color: var(--nsw-white) !important;
+  border-color: var(--nsw-brand-dark) !important;
 }
 
 /* Drawer */
 .mantine-Drawer-content {
-  background: var(--paper-bright) !important;
+  background: var(--nsw-white) !important;
 }
 
 .mantine-Drawer-header {
-  background: var(--paper-bright) !important;
-  border-bottom: 2px solid var(--rule-heavy) !important;
+  background: var(--nsw-white) !important;
+  border-bottom: 2px solid var(--nsw-brand-dark) !important;
 }
 
 .mantine-Drawer-title {
-  font-family: 'DM Serif Display', serif !important;
+  font-family: 'Public Sans', Arial, sans-serif !important;
+  font-weight: 700 !important;
   font-size: 18px !important;
+  color: var(--nsw-brand-dark) !important;
 }
 
 /* Alerts */
 .mantine-Alert-root {
-  border: 1px solid var(--rule) !important;
+  border: 1px solid var(--nsw-grey-02) !important;
   border-left: 4px solid !important;
-  background: var(--paper-bright) !important;
+  background: var(--nsw-grey-01) !important;
 }
 
 .mantine-Alert-root[data-color="red"] {
-  border-left-color: var(--negative) !important;
+  border-left-color: var(--nsw-error) !important;
 }
 
 .mantine-Alert-root[data-color="yellow"] {
-  border-left-color: var(--caution) !important;
+  border-left-color: var(--nsw-warning) !important;
 }
 
 .mantine-Alert-root[data-color="blue"] {
-  border-left-color: var(--ink) !important;
+  border-left-color: var(--nsw-brand-dark) !important;
 }
 
 .mantine-Alert-title {
-  font-family: 'IBM Plex Sans', sans-serif !important;
-  font-weight: 600 !important;
-  text-transform: uppercase !important;
-  letter-spacing: 0.04em !important;
-  font-size: 12px !important;
+  font-family: 'Public Sans', Arial, sans-serif !important;
+  font-weight: 700 !important;
+  font-size: 14px !important;
 }
 
 /* Dividers */
 .mantine-Divider-root {
-  border-color: var(--rule) !important;
+  border-color: var(--nsw-grey-02) !important;
+}
+
+/* Selection */
+::selection {
+  background: var(--nsw-brand-light);
+  color: var(--nsw-brand-dark);
 }
 
 /* Scrollbar */
@@ -328,29 +320,13 @@ h1, h2, h3, h4, h5, h6,
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--paper);
+  background: var(--nsw-grey-01);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--rule);
+  background: var(--nsw-grey-03);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--ink-faint);
-}
-
-/* Google Maps overrides */
-.gm-style .gm-style-iw-c {
-  border-radius: 0 !important;
-  padding: 0 !important;
-}
-
-.gm-style .gm-style-iw-d {
-  overflow: auto !important;
-}
-
-/* Selection color */
-::selection {
-  background: var(--accent);
-  color: var(--paper);
+  background: var(--nsw-grey-04);
 }
