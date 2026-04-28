@@ -1,0 +1,1 @@
+This is a procedural planning proposal with no associated environmental, heritage, or social impact studies. The reviewed documents cover the planning justification only. Residents concerned about future impacts would need to engage with any subsequent Development Application separately.

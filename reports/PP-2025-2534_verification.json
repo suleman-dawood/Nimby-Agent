@@ -1,0 +1,258 @@
+{
+  "pp_number": "PP-2025-2534",
+  "fact_stats": {
+    "total_facts": 19,
+    "l1_verified": 3,
+    "l2_verified": 0,
+    "unsupported": 0,
+    "inconsistent": 0,
+    "no_facts": 23,
+    "claims_checked": 26
+  },
+  "sections": [
+    {
+      "section": "proposed",
+      "citations": [
+        {
+          "document_title": "LEP25.0001 - draft Planning Proposal - For submission",
+          "page": 6,
+          "claim": "Wagga Wagga City Council is proposing to change a rule in the Wagga Wagga Local Environmental Plan 2010 that affects secondary dwellings across the entire local government area .",
+          "citation_verified": true,
+          "fact_status": "verified",
+          "fact_layer": "L1",
+          "fact_notes": ""
+        },
+        {
+          "document_title": "LEP25.0001 - draft Planning Proposal - For submission",
+          "page": 11,
+          "claim": "The main proposal is to increase the maximum allowed size for a secondary dwelling .",
+          "citation_verified": true,
+          "fact_status": "no_facts",
+          "fact_layer": "skipped",
+          "fact_notes": "No verifiable facts extracted from claim"
+        },
+        {
+          "document_title": "LEP25.0001 - draft Planning Proposal - For submission",
+          "page": 4,
+          "claim": "Currently, a secondary dwelling can be up to 33% of the size of the main house on the property .",
+          "citation_verified": true,
+          "fact_status": "no_facts",
+          "fact_layer": "skipped",
+          "fact_notes": "No verifiable facts extracted from claim"
+        },
+        {
+          "document_title": "LEP25.0001 - draft Planning Proposal - For submission",
+          "page": 4,
+          "claim": "The proposal would change this to allow secondary dwellings to be up to 65% of the size of the main house .",
+          "citation_verified": true,
+          "fact_status": "no_facts",
+          "fact_layer": "skipped",
+          "fact_notes": "No verifiable facts extracted from claim"
+        },
+        {
+          "document_title": "LEP25.0001 - draft Planning Proposal - For submission",
+          "page": 4,
+          "claim": "This change would apply to secondary dwellings on all types of land where they are currently permitted, including rural zones and other residential areas .",
+          "citation_verified": true,
+          "fact_status": "no_facts",
+          "fact_layer": "skipped",
+          "fact_notes": "No verifiable facts extracted from claim"
+        },
+        {
+          "document_title": "LEP25.0001 - draft Planning Proposal - For submission",
+          "page": 5,
+          "claim": "This change would apply to secondary dwellings on all types of land where they are currently permitted, including rural zones and other residential areas .",
+          "citation_verified": true,
+          "fact_status": "no_facts",
+          "fact_layer": "skipped",
+          "fact_notes": "No verifiable facts extracted from claim"
+        },
+        {
+          "document_title": "LEP25.0001 - draft Planning Proposal - For submission",
+          "page": 11,
+          "claim": "The aim is to offer more diverse housing choices by allowing larger and more practical secondary dwellings .",
+          "citation_verified": true,
+          "fact_status": "no_facts",
+          "fact_layer": "skipped",
+          "fact_notes": "No verifiable facts extracted from claim"
+        },
+        {
+          "document_title": "LEP25.0001 - draft Planning Proposal - For submission",
+          "page": 13,
+          "claim": "The aim is to offer more diverse housing choices by allowing larger and more practical secondary dwellings .",
+          "citation_verified": true,
+          "fact_status": "no_facts",
+          "fact_layer": "skipped",
+          "fact_notes": "No verifiable facts extracted from claim"
+        },
+        {
+          "document_title": "LEP25.0001 - draft Planning Proposal - For submission",
+          "page": 43,
+          "claim": "The aim is to offer more diverse housing choices by allowing larger and more practical secondary dwellings .",
+          "citation_verified": true,
+          "fact_status": "no_facts",
+          "fact_layer": "skipped",
+          "fact_notes": "No verifiable facts extracted from claim"
+        },
+        {
+          "document_title": "LEP25.0001 - draft Planning Proposal - For submission",
+          "page": 7,
+          "claim": "This is intended to encourage more affordable housing options, provide opportunities for younger people, single-person households, retirees, and multi-generational families, and make better use of existing services and infrastructure .",
+          "citation_verified": true,
+          "fact_status": "no_facts",
+          "fact_layer": "skipped",
+          "fact_notes": "No verifiable facts extracted from claim"
+        },
+        {
+          "document_title": "LEP25.0001 - draft Planning Proposal - For submission",
+          "page": 11,
+          "claim": "This is intended to encourage more affordable housing options, provide opportunities for younger people, single-person households, retirees, and multi-generational families, and make better use of existing services and infrastructure .",
+          "citation_verified": true,
+          "fact_status": "no_facts",
+          "fact_layer": "skipped",
+          "fact_notes": "No verifiable facts extracted from claim"
+        },
+        {
+          "document_title": "LEP25.0001 - draft Planning Proposal - For submission",
+          "page": 13,
+          "claim": "This is intended to encourage more affordable housing options, provide opportunities for younger people, single-person households, retirees, and multi-generational families, and make better use of existing services and infrastructure .",
+          "citation_verified": true,
+          "fact_status": "no_facts",
+          "fact_layer": "skipped",
+          "fact_notes": "No verifiable facts extracted from claim"
+        },
+        {
+          "document_title": "LEP25.0001 - draft Planning Proposal - For submission",
+          "page": 43,
+          "claim": "This is intended to encourage more affordable housing options, provide opportunities for younger people, single-person households, retirees, and multi-generational families, and make better use of existing services and infrastructure .",
+          "citation_verified": true,
+          "fact_status": "no_facts",
+          "fact_layer": "skipped",
+          "fact_notes": "No verifiable facts extracted from claim"
+        }
+      ]
+    },
+    {
+      "section": "changes",
+      "citations": [
+        {
+          "document_title": "LEP25.0001 - draft Planning Proposal - For submission",
+          "page": 10,
+          "claim": "This proposal changes the rules for how large secondary dwellings (like granny flats) can be built across the Wagga Wagga Local Government Area .",
+          "citation_verified": true,
+          "fact_status": "no_facts",
+          "fact_layer": "skipped",
+          "fact_notes": "No verifiable facts extracted from claim"
+        },
+        {
+          "document_title": "LEP25.0001 - draft Planning Proposal - For submission",
+          "page": 4,
+          "claim": "Currently, a secondary dwelling can be no more than 33% of the size of the main house .",
+          "citation_verified": true,
+          "fact_status": "no_facts",
+          "fact_layer": "skipped",
+          "fact_notes": "No verifiable facts extracted from claim"
+        },
+        {
+          "document_title": "LEP25.0001 - draft Planning Proposal - For submission",
+          "page": 5,
+          "claim": "Currently, a secondary dwelling can be no more than 33% of the size of the main house .",
+          "citation_verified": true,
+          "fact_status": "no_facts",
+          "fact_layer": "skipped",
+          "fact_notes": "No verifiable facts extracted from claim"
+        },
+        {
+          "document_title": "LEP25.0001 - draft Planning Proposal - For submission",
+          "page": 4,
+          "claim": "The change will allow secondary dwellings to be up to 65% of the main house's floor area .",
+          "citation_verified": true,
+          "fact_status": "no_facts",
+          "fact_layer": "skipped",
+          "fact_notes": "No verifiable facts extracted from claim"
+        },
+        {
+          "document_title": "LEP25.0001 - draft Planning Proposal - For submission",
+          "page": 5,
+          "claim": "The change will allow secondary dwellings to be up to 65% of the main house's floor area .",
+          "citation_verified": true,
+          "fact_status": "no_facts",
+          "fact_layer": "skipped",
+          "fact_notes": "No verifiable facts extracted from claim"
+        },
+        {
+          "document_title": "LEP25.0001 - draft Planning Proposal - For submission",
+          "page": 10,
+          "claim": "This applies to both non-rural zones (R1 General Residential, R3 Medium Density Residential, R5 Large Lot Residential, MU1 Mixed Use, C4 Environmental Living) and rural zones (RU1 Primary Production, RU2 Rural Landscape, RU4 Primary Production Small Lots, RU5 Village) .",
+          "citation_verified": true,
+          "fact_status": "verified",
+          "fact_layer": "L1",
+          "fact_notes": ""
+        },
+        {
+          "document_title": "LEP25.0001 - draft Planning Proposal - For submission",
+          "page": 5,
+          "claim": "This applies to both non-rural zones (R1 General Residential, R3 Medium Density Residential, R5 Large Lot Residential, MU1 Mixed Use, C4 Environmental Living) and rural zones (RU1 Primary Production, RU2 Rural Landscape, RU4 Primary Production Small Lots, RU5 Village) .",
+          "citation_verified": true,
+          "fact_status": "verified",
+          "fact_layer": "L1",
+          "fact_notes": ""
+        },
+        {
+          "document_title": "LEP25.0001 - draft Planning Proposal - For submission",
+          "page": 10,
+          "claim": "No land will be rezoned as part of this proposal .",
+          "citation_verified": true,
+          "fact_status": "no_facts",
+          "fact_layer": "skipped",
+          "fact_notes": "No verifiable facts extracted from claim"
+        },
+        {
+          "document_title": "LEP25.0001 - draft Planning Proposal - For submission",
+          "page": 38,
+          "claim": "No land will be rezoned as part of this proposal .",
+          "citation_verified": true,
+          "fact_status": "no_facts",
+          "fact_layer": "skipped",
+          "fact_notes": "No verifiable facts extracted from claim"
+        },
+        {
+          "document_title": "LEP25.0001 - draft Planning Proposal - For submission",
+          "page": 38,
+          "claim": "It also does not change existing controls for building height, site coverage, setbacks, or other environmental assessment requirements .",
+          "citation_verified": true,
+          "fact_status": "no_facts",
+          "fact_layer": "skipped",
+          "fact_notes": "No verifiable facts extracted from claim"
+        },
+        {
+          "document_title": "LEP25.0001 - draft Planning Proposal - For submission",
+          "page": 40,
+          "claim": "There are no proposed amendments to planning maps .",
+          "citation_verified": true,
+          "fact_status": "no_facts",
+          "fact_layer": "skipped",
+          "fact_notes": "No verifiable facts extracted from claim"
+        },
+        {
+          "document_title": "LEP25.0001 - draft Planning Proposal - For submission",
+          "page": 11,
+          "claim": "There are no proposed amendments to planning maps .",
+          "citation_verified": true,
+          "fact_status": "no_facts",
+          "fact_layer": "skipped",
+          "fact_notes": "No verifiable facts extracted from claim"
+        },
+        {
+          "document_title": "LEP25.0001 - draft Planning Proposal - For submission",
+          "page": 5,
+          "claim": "The proposal is not expected to significantly increase demand for services or infrastructure .",
+          "citation_verified": true,
+          "fact_status": "no_facts",
+          "fact_layer": "skipped",
+          "fact_notes": "No verifiable facts extracted from claim"
+        }
+      ]
+    }
+  ]
+}

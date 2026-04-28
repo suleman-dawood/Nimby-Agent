@@ -1,0 +1,479 @@
+{
+  "pp_number": "PP-2024-450",
+  "fact_stats": {
+    "total_facts": 30,
+    "l1_verified": 5,
+    "l2_verified": 3,
+    "unsupported": 6,
+    "inconsistent": 0,
+    "no_facts": 34,
+    "claims_checked": 48
+  },
+  "sections": [
+    {
+      "section": "proposed",
+      "citations": [
+        {
+          "document_title": "PP-2024-450 - Draft Public Benefit Offer",
+          "page": 4,
+          "claim": "This proposal, put forward by Legacy , aims to change the planning rules for a site in Dural .",
+          "citation_verified": true,
+          "fact_status": "no_facts",
+          "fact_layer": "skipped",
+          "fact_notes": "No verifiable facts extracted from claim"
+        },
+        {
+          "document_title": "PP-2024-450 - Planning Proposal",
+          "page": 32,
+          "claim": "This proposal, put forward by Legacy , aims to change the planning rules for a site in Dural .",
+          "citation_verified": false,
+          "fact_status": null,
+          "fact_layer": null,
+          "fact_notes": ""
+        },
+        {
+          "document_title": "PP-2024-450 - Traffic and Transport Impact Assessment",
+          "page": 25,
+          "claim": "The main idea is to change the zoning of this land from its current 'RU6 Rural Transition' zone to 'R2 Low Density Residential' .",
+          "citation_verified": true,
+          "fact_status": "verified",
+          "fact_layer": "L1",
+          "fact_notes": ""
+        },
+        {
+          "document_title": "PP-2024-450 - Planning Proposal",
+          "page": 32,
+          "claim": "The main idea is to change the zoning of this land from its current 'RU6 Rural Transition' zone to 'R2 Low Density Residential' .",
+          "citation_verified": false,
+          "fact_status": "unsupported",
+          "fact_layer": "L1",
+          "fact_notes": "zone 'R2': Not found in chunk"
+        },
+        {
+          "document_title": "PP-2024-450 - Traffic and Transport Impact Assessment",
+          "page": 25,
+          "claim": "This change would allow for the construction of 110 new homes in a low-density large lot residential neighbourhood .",
+          "citation_verified": false,
+          "fact_status": "unsupported",
+          "fact_layer": "L1",
+          "fact_notes": "number '110 new homes': Not found in chunk"
+        },
+        {
+          "document_title": "PP-2024-450 - Draft Public Benefit Offer",
+          "page": 2,
+          "claim": "This change would allow for the construction of 110 new homes in a low-density large lot residential neighbourhood .",
+          "citation_verified": false,
+          "fact_status": "unsupported",
+          "fact_layer": "L1",
+          "fact_notes": "number '110 new homes': Not found in chunk"
+        },
+        {
+          "document_title": "PP-2024-450 - Planning Proposal",
+          "page": 32,
+          "claim": "This change would allow for the construction of 110 new homes in a low-density large lot residential neighbourhood .",
+          "citation_verified": false,
+          "fact_status": "unsupported",
+          "fact_layer": "L1",
+          "fact_notes": "number '110 new homes': Not found in chunk"
+        },
+        {
+          "document_title": "PP-2024-450 - Traffic and Transport Impact Assessment",
+          "page": 6,
+          "claim": "The proposal also includes a 32-meter wide road reservation through the site, intended to accommodate a future bypass road connecting to Old Northern Road .",
+          "citation_verified": true,
+          "fact_status": "no_facts",
+          "fact_layer": "skipped",
+          "fact_notes": "No verifiable facts extracted from claim"
+        },
+        {
+          "document_title": "PP-2024-450 - Planning Proposal",
+          "page": 84,
+          "claim": "The proposal also includes a 32-meter wide road reservation through the site, intended to accommodate a future bypass road connecting to Old Northern Road .",
+          "citation_verified": true,
+          "fact_status": "no_facts",
+          "fact_layer": "skipped",
+          "fact_notes": "No verifiable facts extracted from claim"
+        },
+        {
+          "document_title": "PP-2024-450 - Draft Indicative Site Specific DCP",
+          "page": 9,
+          "claim": "The proposal also includes a 32-meter wide road reservation through the site, intended to accommodate a future bypass road connecting to Old Northern Road .",
+          "citation_verified": true,
+          "fact_status": "no_facts",
+          "fact_layer": "skipped",
+          "fact_notes": "No verifiable facts extracted from claim"
+        },
+        {
+          "document_title": "PP-2024-450 - Urban Design Report",
+          "page": 29,
+          "claim": "The proposal also includes a 32-meter wide road reservation through the site, intended to accommodate a future bypass road connecting to Old Northern Road .",
+          "citation_verified": true,
+          "fact_status": "no_facts",
+          "fact_layer": "skipped",
+          "fact_notes": "No verifiable facts extracted from claim"
+        },
+        {
+          "document_title": "PP-2024-450 - Planning Proposal",
+          "page": 32,
+          "claim": "Beyond the homes, the proposal includes creating a new central local park , a pedestrian link , and improving access for Dural Public School .",
+          "citation_verified": true,
+          "fact_status": "no_facts",
+          "fact_layer": "skipped",
+          "fact_notes": "No verifiable facts extracted from claim"
+        },
+        {
+          "document_title": "PP-2024-450 - Urban Design Report",
+          "page": 29,
+          "claim": "Beyond the homes, the proposal includes creating a new central local park , a pedestrian link , and improving access for Dural Public School .",
+          "citation_verified": true,
+          "fact_status": "no_facts",
+          "fact_layer": "skipped",
+          "fact_notes": "No verifiable facts extracted from claim"
+        },
+        {
+          "document_title": "PP-2024-450 - Draft Public Benefit Offer",
+          "page": 2,
+          "claim": "Beyond the homes, the proposal includes creating a new central local park , a pedestrian link , and improving access for Dural Public School .",
+          "citation_verified": true,
+          "fact_status": "no_facts",
+          "fact_layer": "skipped",
+          "fact_notes": "No verifiable facts extracted from claim"
+        },
+        {
+          "document_title": "PP-2024-450 - Urban Design Report",
+          "page": 29,
+          "claim": "Beyond the homes, the proposal includes creating a new central local park , a pedestrian link , and improving access for Dural Public School .",
+          "citation_verified": true,
+          "fact_status": "no_facts",
+          "fact_layer": "skipped",
+          "fact_notes": "No verifiable facts extracted from claim"
+        },
+        {
+          "document_title": "PP-2024-450 - Planning Proposal",
+          "page": 32,
+          "claim": "Beyond the homes, the proposal includes creating a new central local park , a pedestrian link , and improving access for Dural Public School .",
+          "citation_verified": true,
+          "fact_status": "no_facts",
+          "fact_layer": "skipped",
+          "fact_notes": "No verifiable facts extracted from claim"
+        },
+        {
+          "document_title": "PP-2024-450 - Urban Design Report",
+          "page": 29,
+          "claim": "Beyond the homes, the proposal includes creating a new central local park , a pedestrian link , and improving access for Dural Public School .",
+          "citation_verified": true,
+          "fact_status": "no_facts",
+          "fact_layer": "skipped",
+          "fact_notes": "No verifiable facts extracted from claim"
+        },
+        {
+          "document_title": "PP-2024-450 - Planning Proposal",
+          "page": 32,
+          "claim": "It also involves building a new local collector road with a 32-meter wide reserve , and a new intersection on Old Northern Road .",
+          "citation_verified": true,
+          "fact_status": "no_facts",
+          "fact_layer": "skipped",
+          "fact_notes": "No verifiable facts extracted from claim"
+        },
+        {
+          "document_title": "PP-2024-450 - Traffic and Transport Impact Assessment",
+          "page": 25,
+          "claim": "It also involves building a new local collector road with a 32-meter wide reserve , and a new intersection on Old Northern Road .",
+          "citation_verified": true,
+          "fact_status": "no_facts",
+          "fact_layer": "skipped",
+          "fact_notes": "No verifiable facts extracted from claim"
+        },
+        {
+          "document_title": "PP-2024-450 - Planning Proposal",
+          "page": 84,
+          "claim": "It also involves building a new local collector road with a 32-meter wide reserve , and a new intersection on Old Northern Road .",
+          "citation_verified": true,
+          "fact_status": "no_facts",
+          "fact_layer": "skipped",
+          "fact_notes": "No verifiable facts extracted from claim"
+        },
+        {
+          "document_title": "PP-2024-450 - Draft Indicative Site Specific DCP",
+          "page": 9,
+          "claim": "It also involves building a new local collector road with a 32-meter wide reserve , and a new intersection on Old Northern Road .",
+          "citation_verified": true,
+          "fact_status": "no_facts",
+          "fact_layer": "skipped",
+          "fact_notes": "No verifiable facts extracted from claim"
+        },
+        {
+          "document_title": "PP-2024-450 - Urban Design Report",
+          "page": 40,
+          "claim": "It also involves building a new local collector road with a 32-meter wide reserve , and a new intersection on Old Northern Road .",
+          "citation_verified": true,
+          "fact_status": "no_facts",
+          "fact_layer": "skipped",
+          "fact_notes": "No verifiable facts extracted from claim"
+        },
+        {
+          "document_title": "PP-2024-450 - Draft Public Benefit Offer",
+          "page": 4,
+          "claim": "It also involves building a new local collector road with a 32-meter wide reserve , and a new intersection on Old Northern Road .",
+          "citation_verified": false,
+          "fact_status": null,
+          "fact_layer": null,
+          "fact_notes": ""
+        },
+        {
+          "document_title": "PP-2024-450 - Planning Proposal",
+          "page": 84,
+          "claim": "It also involves building a new local collector road with a 32-meter wide reserve , and a new intersection on Old Northern Road .",
+          "citation_verified": true,
+          "fact_status": "no_facts",
+          "fact_layer": "skipped",
+          "fact_notes": "No verifiable facts extracted from claim"
+        },
+        {
+          "document_title": "PP-2024-450 - Draft Indicative Site Specific DCP",
+          "page": 9,
+          "claim": "It also involves building a new local collector road with a 32-meter wide reserve , and a new intersection on Old Northern Road .",
+          "citation_verified": true,
+          "fact_status": "no_facts",
+          "fact_layer": "skipped",
+          "fact_notes": "No verifiable facts extracted from claim"
+        },
+        {
+          "document_title": "PP-2024-450 - Urban Design Report",
+          "page": 37,
+          "claim": "with a 32-meter wide reserve , and a new intersection on Old Northern Road .",
+          "citation_verified": true,
+          "fact_status": "no_facts",
+          "fact_layer": "skipped",
+          "fact_notes": "No verifiable facts extracted from claim"
+        }
+      ]
+    },
+    {
+      "section": "changes",
+      "citations": [
+        {
+          "document_title": "PP-2024-450 - Planning Proposal",
+          "page": 42,
+          "claim": "This proposal involves specific changes to the planning rules for the sites at 614, 618, 626 Old Northern Road and 21, 27 Derriwong Road, Dural .",
+          "citation_verified": true,
+          "fact_status": "no_facts",
+          "fact_layer": "skipped",
+          "fact_notes": "No verifiable facts extracted from claim"
+        },
+        {
+          "document_title": "PP-2024-450 - Exhibition Fact Sheet",
+          "page": 2,
+          "claim": "This proposal involves specific changes to the planning rules for the sites at 614, 618, 626 Old Northern Road and 21, 27 Derriwong Road, Dural .",
+          "citation_verified": true,
+          "fact_status": "no_facts",
+          "fact_layer": "skipped",
+          "fact_notes": "No verifiable facts extracted from claim"
+        },
+        {
+          "document_title": "PP-2024-450 - Planning Proposal",
+          "page": 87,
+          "claim": "Here's what would change on the ground: * **Zoning**: The current RU6 Transition zone would be changed to R2 Low Density Residential .",
+          "citation_verified": true,
+          "fact_status": "verified",
+          "fact_layer": "L1",
+          "fact_notes": ""
+        },
+        {
+          "document_title": "PP-2024-450 - Planning Proposal",
+          "page": 87,
+          "claim": "Here's what would change on the ground: * **Zoning**: The current RU6 Transition zone would be changed to R2 Low Density Residential .",
+          "citation_verified": true,
+          "fact_status": "verified",
+          "fact_layer": "L1",
+          "fact_notes": ""
+        },
+        {
+          "document_title": "PP-2024-450 - Planning Proposal",
+          "page": 87,
+          "claim": "A narrow strip of land along Old Northern Road would remain zoned SP2 Infrastructure (Classified Road) to allow for future road widening .",
+          "citation_verified": true,
+          "fact_status": "verified",
+          "fact_layer": "L1",
+          "fact_notes": ""
+        },
+        {
+          "document_title": "PP-2024-450 - Planning Proposal",
+          "page": 87,
+          "claim": "A narrow strip of land along Old Northern Road would remain zoned SP2 Infrastructure (Classified Road) to allow for future road widening .",
+          "citation_verified": true,
+          "fact_status": "verified",
+          "fact_layer": "L1",
+          "fact_notes": ""
+        },
+        {
+          "document_title": "PP-2024-450 - Planning Proposal",
+          "page": 9,
+          "claim": "* **Building Height**: The maximum height limit for buildings would be reduced from 10 metres to 9 metres .",
+          "citation_verified": true,
+          "fact_status": "verified",
+          "fact_layer": "L2",
+          "fact_notes": "The chunk explicitly states that the maximum height of building control will be reduced from 10 metres to nine metres, directly supporting both the direction and the specific values in the claim. The scope is also consistent with the general changes proposed by the planning proposal."
+        },
+        {
+          "document_title": "PP-2024-450 - Planning Proposal",
+          "page": 9,
+          "claim": "* **Building Height**: The maximum height limit for buildings would be reduced from 10 metres to 9 metres .",
+          "citation_verified": true,
+          "fact_status": "verified",
+          "fact_layer": "L2",
+          "fact_notes": "The chunk explicitly states that the maximum height of building control will be reduced from 10 metres to nine metres, directly supporting both the direction and the specific values in the claim. The scope is also consistent with the general changes proposed by the planning proposal."
+        },
+        {
+          "document_title": "PP-2024-450 - Planning Proposal",
+          "page": 9,
+          "claim": "* **Minimum Lot Size**: The current minimum lot size of 20,000 square metres (2 hectares) would change to varied minimums of 600 square metres, 1,000 square metres, and 2,000 square metres across the site .",
+          "citation_verified": false,
+          "fact_status": "unsupported",
+          "fact_layer": "L2",
+          "fact_notes": "parse_failure: {\n  \"verdict\": \"supported\",\n  \"issues_found\": [],\n  \"reasoning\": \"The"
+        },
+        {
+          "document_title": "PP-2024-450 - Planning Proposal",
+          "page": 87,
+          "claim": "* **Minimum Lot Size**: The current minimum lot size of 20,000 square metres (2 hectares) would change to varied minimums of 600 square metres, 1,000 square metres, and 2,000 square metres across the site .",
+          "citation_verified": true,
+          "fact_status": "verified",
+          "fact_layer": "L2",
+          "fact_notes": "The source explicitly states that the proposed minimum lot sizes are 'across the site', matching the scope mentioned in the claim."
+        },
+        {
+          "document_title": "PP-2024-450 - Planning Proposal",
+          "page": 9,
+          "claim": "* **Number of Dwellings**: A new rule would be introduced to limit residential development to a maximum of 110 homes on the site .",
+          "citation_verified": false,
+          "fact_status": "unsupported",
+          "fact_layer": "L1",
+          "fact_notes": "number '110 homes': Not found in chunk"
+        },
+        {
+          "document_title": "PP-2024-450 - Planning Proposal",
+          "page": 33,
+          "claim": "* **Infrastructure**: The proposal also involves delivering a new local park and improvements to the local road network .",
+          "citation_verified": true,
+          "fact_status": "no_facts",
+          "fact_layer": "skipped",
+          "fact_notes": "No verifiable facts extracted from claim"
+        },
+        {
+          "document_title": "PP-2024-450 - Traffic and Transport Impact Assessment",
+          "page": 50,
+          "claim": "* **Infrastructure**: The proposal also involves delivering a new local park and improvements to the local road network .",
+          "citation_verified": true,
+          "fact_status": "no_facts",
+          "fact_layer": "skipped",
+          "fact_notes": "No verifiable facts extracted from claim"
+        }
+      ]
+    },
+    {
+      "section": "concerns",
+      "citations": [
+        {
+          "document_title": "PP-2024-450 - Acoustic Assessment",
+          "page": 7,
+          "claim": "**Noise:** The area experiences high existing traffic noise .",
+          "citation_verified": true,
+          "fact_status": "no_facts",
+          "fact_layer": "skipped",
+          "fact_notes": "No verifiable facts extracted from claim"
+        },
+        {
+          "document_title": "PP-2024-450 - Acoustic Assessment",
+          "page": 7,
+          "claim": "Ventilation systems are required where windows must be closed .",
+          "citation_verified": true,
+          "fact_status": "no_facts",
+          "fact_layer": "skipped",
+          "fact_notes": "No verifiable facts extracted from claim"
+        },
+        {
+          "document_title": "PP-2024-450 - Acoustic Assessment",
+          "page": 7,
+          "claim": "Different bedroom floor types also impact acoustic requirements .",
+          "citation_verified": true,
+          "fact_status": "no_facts",
+          "fact_layer": "skipped",
+          "fact_notes": "No verifiable facts extracted from claim"
+        },
+        {
+          "document_title": "PP-2024-450 - Detailed Site Investigation",
+          "page": 39,
+          "claim": "**Contamination:** Elevated hydrocarbon levels were found in surface soils at 618 Old Northern Road .",
+          "citation_verified": true,
+          "fact_status": "no_facts",
+          "fact_layer": "skipped",
+          "fact_notes": "No verifiable facts extracted from claim"
+        },
+        {
+          "document_title": "PP-2024-450 - Detailed Site Investigation",
+          "page": 39,
+          "claim": "Asbestos materials, including fragments and pipes, were observed at both 618 Old Northern Road and 21 Derriwong Road, with the full extent of underground pipes unknown .",
+          "citation_verified": true,
+          "fact_status": "no_facts",
+          "fact_layer": "skipped",
+          "fact_notes": "No verifiable facts extracted from claim"
+        },
+        {
+          "document_title": "PP-2024-450 - Detailed Site Investigation",
+          "page": 39,
+          "claim": "These impacts require management .",
+          "citation_verified": true,
+          "fact_status": "no_facts",
+          "fact_layer": "skipped",
+          "fact_notes": "No verifiable facts extracted from claim"
+        },
+        {
+          "document_title": "PP-2024-450 - Detailed Site Investigation",
+          "page": 39,
+          "claim": "Dam water at 618 Old Northern Road contains heavy metals and can be used for irrigation, but not discharged into waterways .",
+          "citation_verified": true,
+          "fact_status": "no_facts",
+          "fact_layer": "skipped",
+          "fact_notes": "No verifiable facts extracted from claim"
+        },
+        {
+          "document_title": "PP-2024-450 - Heritage Impact Assessment",
+          "page": 21,
+          "claim": "**Heritage:** The proposal is near a heritage item, but it is not expected to diminish its significance or views .",
+          "citation_verified": true,
+          "fact_status": "no_facts",
+          "fact_layer": "skipped",
+          "fact_notes": "No verifiable facts extracted from claim"
+        },
+        {
+          "document_title": "PP-2024-450 - Aboriginal Heritage Assessment",
+          "page": 22,
+          "claim": "No Aboriginal heritage objects or sites were found .",
+          "citation_verified": true,
+          "fact_status": "no_facts",
+          "fact_layer": "skipped",
+          "fact_notes": "No verifiable facts extracted from claim"
+        },
+        {
+          "document_title": "PP-2024-450 - Detailed Site Investigation",
+          "page": 167,
+          "claim": "**Other Risks:** The land is subject to bushfire risk, requiring development to meet specific guidelines .",
+          "citation_verified": true,
+          "fact_status": "no_facts",
+          "fact_layer": "skipped",
+          "fact_notes": "No verifiable facts extracted from claim"
+        },
+        {
+          "document_title": "PP-2024-450 - Detailed Site Investigation",
+          "page": 167,
+          "claim": "The site is not affected by flooding, tidal inundation, subsidence, or acid sulphate soils .",
+          "citation_verified": true,
+          "fact_status": "no_facts",
+          "fact_layer": "skipped",
+          "fact_notes": "No verifiable facts extracted from claim"
+        }
+      ]
+    }
+  ]
+}
