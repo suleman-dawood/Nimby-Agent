@@ -28,11 +28,20 @@ def get_client() -> genai.Client:
     if _client is not None:
         return _client
 
-    # If GOOGLE_SA_JSON env var is set (Railway), write to temp file for ADC
-    sa_json = os.environ.get("GOOGLE_SA_JSON")
-    if sa_json:
+    # If GOOGLE_SA_KEY env var is set (Railway), decode and write to temp file for ADC
+    # Accepts base64-encoded service account JSON
+    sa_b64 = os.environ.get("GOOGLE_SA_KEY")
+    if sa_b64:
+        import base64
+        sa_json = base64.b64decode(sa_b64).decode("utf-8")
         tmp = tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False)
         tmp.write(sa_json)
+        tmp.close()
+        os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = tmp.name
+    elif os.environ.get("GOOGLE_SA_JSON"):
+        # Fallback: raw JSON string
+        tmp = tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False)
+        tmp.write(os.environ["GOOGLE_SA_JSON"])
         tmp.close()
         os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = tmp.name
 
