@@ -8,7 +8,6 @@ import time
 from pathlib import Path
 
 import chromadb
-import google.generativeai as genai
 from sqlalchemy.orm import Session
 
 from scraper.models import Chunk, Document, create_db_engine, create_session
@@ -17,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 CHROMA_DIR = Path("data/chroma")
 COLLECTION_NAME = "pp_chunks"
-EMBED_MODEL = "models/gemini-embedding-001"
+EMBED_MODEL = "gemini-embedding-001"
 BATCH_SIZE = 100  # Gemini allows up to 100 texts per embed call
 RATE_DELAY = 0.5  # seconds between batches
 
@@ -32,18 +31,20 @@ def get_collection() -> chromadb.Collection:
 
 
 def embed_texts(texts: list[str]) -> list[list[float]]:
-    """Embed a batch of texts using Gemini."""
-    result = genai.embed_content(
+    """Embed a batch of texts using Gemini via ADC."""
+    from pipeline.llm_utils import get_client
+    client = get_client()
+    result = client.models.embed_content(
         model=EMBED_MODEL,
-        content=texts,
-        task_type="RETRIEVAL_DOCUMENT",
+        contents=texts,
+        config={"task_type": "RETRIEVAL_DOCUMENT"},
     )
-    return result["embedding"]
+    return [e.values for e in result.embeddings]
 
 
 def embed_all(session: Session, tiers: list[int] | None = None) -> None:
     """Embed all chunks (optionally filtered by tier) into ChromaDB."""
-    genai.configure(api_key=os.environ["GOOGLE_API_KEY"])
+    # ADC credentials used automatically via get_client()
 
     collection = get_collection()
     existing_ids = set(collection.get()["ids"]) if collection.count() > 0 else set()

@@ -6,7 +6,6 @@ import logging
 import os
 from dataclasses import dataclass, field
 
-import google.generativeai as genai
 from sqlalchemy.orm import Session
 
 from scraper.models import PP, create_db_engine, create_session
@@ -109,7 +108,7 @@ def generate_submission(
     user_address: str = "",
 ) -> SubmissionResult:
     """Generate a full submission letter."""
-    genai.configure(api_key=os.environ["GOOGLE_API_KEY"])
+    # ADC credentials used automatically via get_client()
     engine = create_db_engine()
     session = create_session(engine)
 

@@ -7,7 +7,6 @@ import os
 import re
 from dataclasses import dataclass, field
 
-import google.generativeai as genai
 from sqlalchemy.orm import Session
 
 from scraper.models import PP, Document, Chunk, create_db_engine, create_session
@@ -64,9 +63,65 @@ def get_suggested_questions(pp_number: str, session: Session) -> list[str]:
     return questions[:6]
 
 
+def generate_impact(pp_number: str, address: str, distance_km: float) -> QAResult:
+    """Generate a personalized impact summary for a resident at a specific address."""
+    engine = create_db_engine()
+    session = create_session(engine)
+
+    try:
+        pp = session.get(PP, pp_number)
+        if not pp:
+            return QAResult(answer=f"Planning proposal {pp_number} not found.")
+
+        chunks = retrieve(pp_number, f"impact residents nearby traffic noise height building", k=10, tier_filter=[1, 2])
+
+        if not chunks:
+            return QAResult(answer="The proposal documents don't contain enough information to assess the impact on your address.")
+
+        chunk_text = format_chunks(chunks)
+
+        system = load_prompt("impact_system")
+        prompt = load_prompt("impact_user").format(
+            pp_number=pp_number,
+            title=pp.title or "",
+            address=address,
+            distance_km=distance_km,
+            council=pp.council or "the relevant authority",
+            exhibition_end=pp.exhibition_end or "Not specified",
+            chunks=chunk_text,
+        )
+
+        answer = call_llm(prompt, system=system)
+        answer = normalize_citations(answer)
+        citations = extract_citations(answer)
+
+        verified = 0
+        for cit in citations:
+            chunk = find_chunk(session, pp_number, cit["document_title"], cit["page"])
+            if chunk:
+                claim = extract_claim_for_citation(answer, cit["span"])
+                result = verify_claim_facts(
+                    claim_sentence=claim,
+                    chunk_text=chunk.text,
+                    chunk_metadata={"document_title": cit["document_title"], "page_number": cit["page"]},
+                )
+                if result.status in ("verified", "no_facts"):
+                    verified += 1
+
+        return QAResult(
+            answer=answer,
+            citations=citations,
+            chunks_used=[{"doc_title": c["document_title"], "page": c["page_number"]} for c in chunks],
+            verification_stats={"verified": verified, "unsupported": 0, "total": len(citations)},
+        )
+
+    finally:
+        session.close()
+
+
 def answer_question(pp_number: str, question: str) -> QAResult:
     """Answer a question about a PP with grounded citations."""
-    genai.configure(api_key=os.environ["GOOGLE_API_KEY"])
+    # ADC credentials used automatically via get_client()
     engine = create_db_engine()
     session = create_session(engine)
 

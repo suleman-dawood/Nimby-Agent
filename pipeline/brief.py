@@ -14,7 +14,6 @@ import re
 import time
 from datetime import datetime, timezone
 
-import google.generativeai as genai
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 
@@ -588,7 +587,7 @@ def _save_audit_log(pp_number: str, drafted: list[dict], fact_stats: dict) -> No
 # --- Main pipeline ---
 
 def generate_brief(pp_number: str) -> str:
-    genai.configure(api_key=os.environ["GOOGLE_API_KEY"])
+    # ADC credentials used automatically via get_client()
     engine = create_db_engine()
     session = create_session(engine)
 

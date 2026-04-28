@@ -15,7 +15,6 @@ from collections import defaultdict
 
 import chromadb
 import cohere
-import google.generativeai as genai
 from rank_bm25 import BM25Okapi
 
 from pipeline.embed import CHROMA_DIR, COLLECTION_NAME, EMBED_MODEL
@@ -32,13 +31,14 @@ def _get_collection() -> chromadb.Collection:
 
 
 def _embed_query(text: str) -> list[float]:
-    genai.configure(api_key=os.environ["GOOGLE_API_KEY"])
-    result = genai.embed_content(
+    from pipeline.llm_utils import get_client
+    client = get_client()
+    result = client.models.embed_content(
         model=EMBED_MODEL,
-        content=text,
-        task_type="RETRIEVAL_QUERY",
+        contents=text,
+        config={"task_type": "RETRIEVAL_QUERY"},
     )
-    return result["embedding"]
+    return result.embeddings[0].values
 
 
 def _build_where_filter(pp_number: str, tier_filter: list[int] | None) -> dict:
@@ -244,8 +244,6 @@ def retrieve(
 
 if __name__ == "__main__":
     import sys
-    os.environ.setdefault("GOOGLE_API_KEY", open(".env").read().split("=")[1].strip())
-
     pp = sys.argv[1] if len(sys.argv) > 1 else "PP-2023-2828"
     query = sys.argv[2] if len(sys.argv) > 2 else "proposed building heights"
 

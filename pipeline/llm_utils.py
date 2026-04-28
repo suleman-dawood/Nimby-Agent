@@ -7,11 +7,28 @@ import os
 import re
 import time
 
-import google.generativeai as genai
+from google import genai
+from google.genai import types
 
 logger = logging.getLogger(__name__)
 
-MODEL = "models/gemini-2.5-flash"
+GCP_PROJECT = "gen-lang-client-0499400729"
+GCP_LOCATION = "us-central1"
+MODEL = "gemini-2.5-flash"
+
+_client: genai.Client | None = None
+
+
+def get_client() -> genai.Client:
+    """Get or create the shared Genai client using ADC."""
+    global _client
+    if _client is None:
+        _client = genai.Client(
+            vertexai=True,
+            project=GCP_PROJECT,
+            location=GCP_LOCATION,
+        )
+    return _client
 PROMPTS_DIR = os.path.join(os.path.dirname(__file__), "prompts")
 
 # Canonical citation format: [doc: Title | p.N]
@@ -26,14 +43,18 @@ def load_prompt(name: str) -> str:
 
 
 def call_llm(prompt: str, system: str = "", retries: int = 3) -> str:
-    """Call Gemini Flash with retry + backoff."""
-    model = genai.GenerativeModel(
-        MODEL,
+    """Call Gemini Flash with retry + backoff via ADC."""
+    client = get_client()
+    config = types.GenerateContentConfig(
         system_instruction=system if system else None,
     )
     for attempt in range(retries):
         try:
-            response = model.generate_content(prompt)
+            response = client.models.generate_content(
+                model=MODEL,
+                contents=prompt,
+                config=config,
+            )
             if response.text:
                 return response.text
             logger.warning("Empty LLM response (attempt %d)", attempt + 1)

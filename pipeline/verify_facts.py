@@ -14,7 +14,7 @@ import re
 from dataclasses import dataclass, field
 from typing import Literal
 
-import google.generativeai as genai
+from google.genai import types as genai_types
 from sqlalchemy.orm import Session
 
 logger = logging.getLogger(__name__)
@@ -455,14 +455,20 @@ def layer_2_verify(
         flagged_aspects=", ".join(escalation_reasons),
     )
 
-    model = genai.GenerativeModel(
-        "models/gemini-2.5-flash",
+    from pipeline.llm_utils import get_client
+    client = get_client()
+    config = genai_types.GenerateContentConfig(
         system_instruction=system,
-        generation_config=genai.GenerationConfig(temperature=0, max_output_tokens=800),
+        temperature=0,
+        max_output_tokens=800,
     )
 
     try:
-        response = model.generate_content(user)
+        response = client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=user,
+            config=config,
+        )
         raw_text = response.text.strip()
 
         parsed = _parse_l2_response(raw_text)
