@@ -54,7 +54,7 @@ export default function AddressSearch({ onPlaceSelected, loading }: Props) {
           placeholder="e.g. 42 Wallaby Way, Sydney NSW"
           value={value}
           onChange={(e) => setValue(e.currentTarget.value)}
-          style={{ minWidth: 380 }}
+          style={{ minWidth: 200, flex: 1 }}
         />
       </Autocomplete>
       <Button loading={loading} disabled={!value} onClick={onPlaceChanged}>

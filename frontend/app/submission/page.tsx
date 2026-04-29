@@ -18,8 +18,23 @@ import {
 import { Autocomplete } from "@react-google-maps/api";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useState, useEffect, useRef } from "react";
+import ReactMarkdown from "react-markdown";
 import { getConcerns, generateSubmission, getBrief, getCitation } from "@/lib/api";
 import MapProvider from "@/components/map/MapProvider";
+
+const CITE_RE = /\[doc:\s*.+?\s*\|\s*p\.?\s*\d+\]/g;
+
+/** Strip markdown formatting and citations for plain-text clipboard copy. */
+function toPlainText(md: string): string {
+  return md
+    .replace(CITE_RE, "")
+    .replace(/^#{1,6}\s+/gm, "")
+    .replace(/\*\*(.+?)\*\*/g, "$1")
+    .replace(/\*(.+?)\*/g, "$1")
+    .replace(/^[-*]\s+/gm, "- ")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
 
 function SubmissionForm() {
   const [ppNumber, setPpNumber] = useState<string>("");
@@ -70,20 +85,20 @@ function SubmissionForm() {
 
   const handleDownload = () => {
     if (!submitMutation.data) return;
-    const blob = new Blob([submitMutation.data.markdown], {
-      type: "text/markdown",
+    const blob = new Blob([toPlainText(submitMutation.data.markdown)], {
+      type: "text/plain",
     });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `submission_${ppNumber}.md`;
+    a.download = `submission_${ppNumber}.txt`;
     a.click();
     URL.revokeObjectURL(url);
   };
 
   const handleCopyAndOpen = () => {
     if (!submitMutation.data) return;
-    navigator.clipboard.writeText(submitMutation.data.markdown);
+    navigator.clipboard.writeText(toPlainText(submitMutation.data.markdown));
     if (portalUrl) window.open(portalUrl, "_blank");
   };
 
@@ -216,7 +231,7 @@ function SubmissionForm() {
               onClick={() => submitMutation.mutate()}
               loading={submitMutation.isPending}
               disabled={selectedConcerns.length === 0}
-              size="lg"
+              style={{ alignSelf: "flex-start" }}
             >
               Generate Submission
             </Button>
@@ -241,6 +256,7 @@ function SubmissionForm() {
                 <div style={{ borderTop: "2px solid var(--nsw-brand-dark)" }} />
 
                 <div
+                  className="brief-content"
                   style={{
                     padding: 24,
                     background: "var(--nsw-white)",
@@ -248,16 +264,9 @@ function SubmissionForm() {
                     borderLeft: "4px solid var(--nsw-text)",
                   }}
                 >
-                  <Text
-                    size="sm"
-                    style={{
-                      whiteSpace: "pre-wrap",
-                      lineHeight: 1.75,
-                      color: "var(--nsw-text)",
-                    }}
-                  >
-                    {submitMutation.data.markdown}
-                  </Text>
+                  <ReactMarkdown>
+                    {submitMutation.data.markdown.replace(CITE_RE, "")}
+                  </ReactMarkdown>
                 </div>
 
                 {submitMutation.data.citations.length > 0 && (
