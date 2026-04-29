@@ -49,8 +49,8 @@ export default function ResultsPage() {
   };
 
   return (
-    <Container size="lg" py="xl">
-      <Stack gap="lg">
+    <Container size="lg" py="md" className="results-container">
+      <Stack gap="md">
         <div>
           <Text
             style={{
@@ -59,12 +59,12 @@ export default function ResultsPage() {
               textTransform: "uppercase",
               letterSpacing: "0.1em",
               color: "var(--nsw-grey-04)",
-              marginBottom: 8,
+              marginBottom: 4,
             }}
           >
             Search Results
           </Text>
-          <Title order={2} style={{ fontSize: 28 }}>
+          <Title order={2} className="results-title">
             Proposals near {data.address}
           </Title>
           <div

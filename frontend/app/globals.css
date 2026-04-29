@@ -359,6 +359,19 @@ h1, h2, h3, h4, h5, h6,
   .form-row {
     flex-direction: column;
   }
+  .header-title {
+    font-size: 14px !important;
+  }
+  .header-subtitle {
+    display: none !important;
+  }
+  .results-container {
+    padding-left: 8px !important;
+    padding-right: 8px !important;
+  }
+  .results-title {
+    font-size: 20px !important;
+  }
 }
 
 /* Scrollbar */

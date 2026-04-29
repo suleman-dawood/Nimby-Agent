@@ -32,8 +32,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       padding="md"
     >
       <MantineAppShell.Header>
-        <Group h="100%" px="md" justify="space-between">
-          <Group gap="sm">
+        <Group h="100%" px="sm" justify="space-between" wrap="nowrap">
+          <Group gap={8} wrap="nowrap">
             <Burger
               opened={opened}
               onClick={toggle}
@@ -41,11 +41,12 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
               size="sm"
               color="white"
             />
-            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
               <div
                 style={{
-                  width: 32,
-                  height: 32,
+                  width: 28,
+                  height: 28,
+                  minWidth: 28,
                   background: "var(--nsw-white)",
                   display: "flex",
                   alignItems: "center",
@@ -56,7 +57,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                   style={{
                     fontFamily: "'Public Sans', sans-serif",
                     fontWeight: 700,
-                    fontSize: 14,
+                    fontSize: 12,
                     color: "var(--nsw-brand-dark)",
                     lineHeight: 1,
                   }}
@@ -65,11 +66,12 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                 </Text>
               </div>
               <Text
+                className="header-title"
                 style={{
                   fontFamily: "'Public Sans', sans-serif",
-                  fontSize: 18,
                   fontWeight: 700,
                   color: "var(--nsw-white)",
+                  whiteSpace: "nowrap",
                 }}
               >
                 Planning Proposals
@@ -77,10 +79,12 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             </div>
           </Group>
           <Text
+            className="header-subtitle"
             style={{
               fontFamily: "'Public Sans', sans-serif",
               fontSize: 12,
               color: "rgba(255,255,255,0.7)",
+              whiteSpace: "nowrap",
             }}
           >
             Nimby Agent

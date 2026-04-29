@@ -91,7 +91,7 @@ export default function BriefPage() {
         className="brief-container"
         style={{
           transition: "margin-right 0.2s ease",
-          ...(chatOpened ? { marginRight: 396 } : {}),
+          ...(chatOpened ? { marginRight: 516 } : {}),
         }}
       >
         <Stack gap="lg">

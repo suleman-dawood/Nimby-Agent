@@ -3,7 +3,6 @@
 import {
   Text,
   Textarea,
-  Button,
   Stack,
   Loader,
   Center,
@@ -381,34 +380,52 @@ export default function ChatPanel({
           </div>
         )}
 
-      {/* Input */}
+      {/* Input — Claude-style integrated bar */}
       <div
         style={{
           padding: "12px 16px",
-          borderTop: "2px solid var(--nsw-brand-dark)",
-          display: "flex",
-          gap: 8,
-          alignItems: "flex-end",
+          borderTop: "1px solid var(--nsw-grey-02)",
         }}
       >
-        <Textarea
-          placeholder="Ask about this proposal..."
-          value={input}
-          onChange={(e) => setInput(e.currentTarget.value)}
-          onKeyDown={handleKeyDown}
-          style={{ flex: 1 }}
-          disabled={isStreaming}
-          autosize
-          minRows={1}
-          maxRows={4}
-        />
-        <Button
-          onClick={() => handleSend()}
-          disabled={!input.trim() || isStreaming}
-          style={{ alignSelf: "flex-end" }}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "flex-end",
+            gap: 0,
+            border: "2px solid var(--nsw-grey-03)",
+            background: "var(--nsw-white)",
+            padding: "6px 6px 6px 12px",
+            transition: "border-color 0.15s",
+          }}
+          onFocus={(e) => (e.currentTarget.style.borderColor = "var(--nsw-brand-dark)")}
+          onBlur={(e) => (e.currentTarget.style.borderColor = "var(--nsw-grey-03)")}
         >
-          Send
-        </Button>
+          <Textarea
+            placeholder="Ask about this proposal..."
+            value={input}
+            onChange={(e) => setInput(e.currentTarget.value)}
+            onKeyDown={handleKeyDown}
+            style={{ flex: 1 }}
+            disabled={isStreaming}
+            autosize
+            minRows={1}
+            maxRows={4}
+            variant="unstyled"
+            styles={{
+              input: { fontSize: 13, padding: 0, minHeight: "unset" },
+            }}
+          />
+          <ActionIcon
+            onClick={() => handleSend()}
+            disabled={!input.trim() || isStreaming}
+            variant="filled"
+            color="dark"
+            size="md"
+            style={{ flexShrink: 0 }}
+          >
+            <span style={{ fontSize: 16 }}>&uarr;</span>
+          </ActionIcon>
+        </div>
       </div>
 
       <style>{`
@@ -416,7 +433,7 @@ export default function ChatPanel({
           50% { opacity: 0; }
         }
         .chat-panel {
-          width: 380px;
+          width: 500px;
         }
         @media (max-width: 640px) {
           .chat-panel {
