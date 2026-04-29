@@ -1,85 +1,56 @@
-# NSW Planning Proposals Scraper
+# Nimby Agent
 
-Scrapes all Planning Proposals currently under exhibition from the
-[NSW Planning Portal](https://www.planningportal.nsw.gov.au/ppr/under%20exhibition),
-downloads every attached document, and stores everything in a local dataset
-with a SQLite manifest.
+AI-powered planning proposal analysis tool for NSW residents. Enter an address, find nearby planning proposals, get plain-language briefs with grounded citations, ask questions, and generate evidence-based submissions.
 
-No parsing of PDF contents, no LLM work, no classification — just raw data
-capture for downstream pipeline use.
+## Stack
+
+Scraper:  Python, Playwright, SQLite manifest
+Pipeline: PDF extraction, document classification, ChromaDB + BM25 + Cohere rerank (hybrid retrieval), LLM brief generation with citation verification
+Backend: FastAPI, Python
+Frontend: Next.js (App Router), TypeScript, Mantine UI, Google Maps
+
+## How it works
+
+1. **Scrape** — Crawls the [NSW Planning Portal](https://www.planningportal.nsw.gov.au/ppr/under%20exhibition) for all proposals under exhibition. Downloads every attached PDF. Stores metadata in SQLite.
+2. **Extract & classify** — Extracts text from PDFs page by page, classifies documents by tier and concern tag.
+3. **Embed** — Chunks text and stores embeddings in ChromaDB for semantic search.
+4. **Search** — User enters an address. Geocoded via Google Maps, matched to nearby planning proposals.
+5. **Brief** — Generates a plain-language brief per proposal. Every factual claim cites a specific document and page. Citations resolve to real extracted text.
+6. **Q&A** — Ask questions about any proposal. Hybrid retrieval (vector + BM25 + rerank) finds relevant chunks, LLM answers with grounded citations.
+7. **Submission** — Generates evidence-based submissions using verified claims from the proposal documents.
+
+## Project structure
+
+```
+scraper/          # Portal crawler + PDF downloader
+pipeline/         # classify, extract, embed, retrieve, brief, qa, submission
+api/              # FastAPI backend
+frontend/         # Next.js + Mantine + Google Maps
+data/             # Raw HTML, downloaded PDFs, ChromaDB store
+plans/            # Build plans per component
+tests/            # Unit + integration tests
+```
 
 ## Quick start
 
+### Scraper
+
 ```bash
 uv sync
-uv run python -m scraper.run
+uv run python -m scraper.run          # full scrape
+uv run python -m scraper.run --limit 3 # limited test run
 ```
 
-## Limited test run
+### Backend
 
 ```bash
-uv run python -m scraper.run --limit 3
+uvicorn api.main:app --reload
 ```
 
-## Outputs
-
-```
-data/
-  raw_html/          # One HTML file per PP detail page, plus _index.html
-    _index.html
-    PP-2024-450.html
-    ...
-  documents/         # Deduplicated PDFs, named by SHA-256
-    a1b2c3d4....pdf
-manifest.sqlite      # Metadata + document tracking
-```
-
-## Inspecting the manifest
+### Frontend
 
 ```bash
-sqlite3 manifest.sqlite
-
--- Count PPs and documents
-SELECT COUNT(*) FROM pps;
-SELECT COUNT(*) FROM documents;
-
--- Show download failures
-SELECT pp_number, url, download_status
-FROM documents
-WHERE download_status NOT IN ('ok', 'pending');
-
--- Total download size
-SELECT printf('%.1f MB', SUM(byte_size) / 1048576.0)
-FROM documents WHERE download_status = 'ok';
-```
-
-## Known limitations
-
-- Two detail page templates are detected (council-led "Template A" and
-  State-led "Template B"). Other layouts log an error and produce an empty
-  document list — the HTML is still saved for manual inspection.
-- Serial execution only. First full run takes 30–60 minutes.
-- Re-runs are idempotent: pages are re-scraped but already-downloaded
-  documents are skipped.
-
-## Polite scraping
-
-The default User-Agent is a placeholder. Update it in `scraper/fetch.py`
-before heavy use:
-
-```python
-USER_AGENT = "nsw-ppr-scraper/0.1 (+github.com/your-username/your-repo)"
-```
-
-Requests are throttled to 1.5s between calls with exponential backoff on
-server errors.
-
-## Running parse tests
-
-After a first scrape, copy fixture files for the parser smoke tests:
-
-```bash
-cp data/raw_html/PP-2024-450.html scraper/fixtures/
-cp data/raw_html/PP-2023-2828.html scraper/fixtures/
-uv run python -m scraper.test_parse
+cd frontend
+npm install
+npm run dev
 ```
