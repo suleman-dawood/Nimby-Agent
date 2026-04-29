@@ -201,14 +201,15 @@ function SubmissionForm() {
               minRows={3}
             />
 
-            <Group grow>
+            <div className="form-row">
               <TextInput
                 label="Your name"
                 placeholder="A Concerned Resident"
                 value={userName}
                 onChange={(e) => setUserName(e.currentTarget.value)}
+                style={{ flex: 1 }}
               />
-              <div>
+              <div style={{ flex: 1 }}>
                 <Autocomplete
                   onLoad={onAutocompleteLoad}
                   onPlaceChanged={onPlaceChanged}
@@ -225,7 +226,7 @@ function SubmissionForm() {
                   />
                 </Autocomplete>
               </div>
-            </Group>
+            </div>
 
             <Button
               onClick={() => submitMutation.mutate()}

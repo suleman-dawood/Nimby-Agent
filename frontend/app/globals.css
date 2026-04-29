@@ -314,6 +314,22 @@ h1, h2, h3, h4, h5, h6,
   color: var(--nsw-brand-dark);
 }
 
+/* Responsive layout helpers */
+.address-search-row {
+  display: flex;
+  gap: 8px;
+  align-items: flex-end;
+}
+
+.address-search-row > :first-child {
+  flex: 1;
+}
+
+.form-row {
+  display: flex;
+  gap: 12px;
+}
+
 /* Mobile overrides */
 @media (max-width: 640px) {
   .brief-container {
@@ -333,6 +349,15 @@ h1, h2, h3, h4, h5, h6,
   .mantine-Tabs-tab {
     white-space: nowrap !important;
     flex-shrink: 0 !important;
+  }
+  .address-search-row {
+    flex-direction: column;
+  }
+  .address-search-row > :last-child {
+    align-self: flex-start !important;
+  }
+  .form-row {
+    flex-direction: column;
   }
 }
 

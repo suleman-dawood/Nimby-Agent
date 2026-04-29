@@ -1,7 +1,7 @@
 "use client";
 
 import { Autocomplete } from "@react-google-maps/api";
-import { TextInput, Button, Group } from "@mantine/core";
+import { TextInput, Button } from "@mantine/core";
 import { useState, useRef } from "react";
 
 // NSW bounding box — strongly bias results to NSW
@@ -40,7 +40,7 @@ export default function AddressSearch({ onPlaceSelected, loading }: Props) {
   };
 
   return (
-    <Group align="end" gap="sm">
+    <div className="address-search-row">
       <Autocomplete
         onLoad={onLoad}
         onPlaceChanged={onPlaceChanged}
@@ -54,12 +54,16 @@ export default function AddressSearch({ onPlaceSelected, loading }: Props) {
           placeholder="e.g. 42 Wallaby Way, Sydney NSW"
           value={value}
           onChange={(e) => setValue(e.currentTarget.value)}
-          style={{ minWidth: 200, flex: 1 }}
         />
       </Autocomplete>
-      <Button loading={loading} disabled={!value} onClick={onPlaceChanged}>
+      <Button
+        loading={loading}
+        disabled={!value}
+        onClick={onPlaceChanged}
+        style={{ alignSelf: "flex-end" }}
+      >
         Search
       </Button>
-    </Group>
+    </div>
   );
 }
