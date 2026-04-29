@@ -80,6 +80,7 @@ export default function SearchPage() {
         </div>
 
         <div
+          className="search-box"
           style={{
             border: "2px solid var(--nsw-brand-dark)",
             padding: 24,
