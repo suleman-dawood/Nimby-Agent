@@ -314,6 +314,28 @@ h1, h2, h3, h4, h5, h6,
   color: var(--nsw-brand-dark);
 }
 
+/* Mobile overrides */
+@media (max-width: 640px) {
+  .brief-container {
+    margin-right: 0 !important;
+    padding-left: 12px !important;
+    padding-right: 12px !important;
+  }
+  .mantine-Tabs-list {
+    overflow-x: auto !important;
+    flex-wrap: nowrap !important;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .mantine-Tabs-list::-webkit-scrollbar {
+    display: none;
+  }
+  .mantine-Tabs-tab {
+    white-space: nowrap !important;
+    flex-shrink: 0 !important;
+  }
+}
+
 /* Scrollbar */
 ::-webkit-scrollbar {
   width: 8px;

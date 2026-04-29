@@ -88,9 +88,10 @@ export default function BriefPage() {
       <Container
         size="md"
         py="xl"
+        className="brief-container"
         style={{
-          marginRight: chatOpened ? 396 : undefined,
           transition: "margin-right 0.2s ease",
+          ...(chatOpened ? { marginRight: 396 } : {}),
         }}
       >
         <Stack gap="lg">
@@ -148,6 +149,7 @@ export default function BriefPage() {
               borderTop: "1px solid var(--nsw-grey-02)",
               paddingTop: 16,
               display: "flex",
+              flexWrap: "wrap",
               gap: 12,
             }}
           >

@@ -166,6 +166,81 @@ def ask_stream(req: AskRequest):
     )
 
 
+def _stream_impact_fast(pp_number: str, address: str, distance_km: float):
+    """Stream a fast impact response using the pre-generated brief (no RAG pipeline)."""
+    import os
+    from scraper.models import PP, create_db_engine, create_session
+    from pipeline.llm_utils import (
+        load_prompt, stream_llm, normalize_citations, extract_citations,
+    )
+
+    engine = create_db_engine()
+    session = create_session(engine)
+
+    try:
+        pp = session.get(PP, pp_number)
+        if not pp:
+            yield f"data: {json.dumps({'type': 'error', 'content': 'Proposal not found'})}\n\n"
+            return
+
+        briefs_dir = os.path.join(
+            os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
+            "data", "briefs",
+        )
+        brief_path = os.path.join(briefs_dir, f"{pp_number}.md")
+        if not os.path.exists(brief_path):
+            yield f"data: {json.dumps({'type': 'error', 'content': 'Brief not available yet.'})}\n\n"
+            return
+
+        with open(brief_path) as f:
+            brief_md = f.read()
+
+        system = load_prompt("impact_fast_system")
+        prompt = load_prompt("impact_fast_user").format(
+            pp_number=pp_number,
+            title=pp.title or "",
+            address=address,
+            distance_km=distance_km,
+            council=pp.council or "the relevant authority",
+            exhibition_end=pp.exhibition_end or "Not specified",
+            brief=brief_md,
+        )
+
+        full_text = ""
+        for token in stream_llm(prompt, system=system):
+            full_text += token
+            yield f"data: {json.dumps({'type': 'token', 'content': token})}\n\n"
+
+        # Extract any citations the LLM reused from the brief
+        full_text = normalize_citations(full_text)
+        citations = extract_citations(full_text)
+        cit_list = [
+            {"document_title": c["document_title"], "page": c["page"]}
+            for c in citations
+        ]
+        seen = set()
+        unique_cits = []
+        for c in cit_list:
+            key = f"{c['document_title']}|{c['page']}"
+            if key not in seen:
+                seen.add(key)
+                unique_cits.append(c)
+
+        yield f"data: {json.dumps({'type': 'citations', 'citations': unique_cits})}\n\n"
+        yield "data: [DONE]\n\n"
+
+    finally:
+        session.close()
+
+
+@router.post("/impact-fast/stream")
+def impact_fast_stream(req: ImpactRequest):
+    return StreamingResponse(
+        _stream_impact_fast(req.pp_number, req.address, req.distance_km),
+        media_type="text/event-stream",
+    )
+
+
 @router.post("/impact/stream")
 def impact_stream(req: ImpactRequest):
     return StreamingResponse(

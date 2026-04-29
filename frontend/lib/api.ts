@@ -173,6 +173,10 @@ export function streamImpact(ppNumber: string, address: string, distanceKm: numb
   return streamRequest("/api/qa/impact/stream", { pp_number: ppNumber, address, distance_km: distanceKm }, callbacks);
 }
 
+export function streamImpactFast(ppNumber: string, address: string, distanceKm: number, callbacks: StreamCallbacks) {
+  return streamRequest("/api/qa/impact-fast/stream", { pp_number: ppNumber, address, distance_km: distanceKm }, callbacks);
+}
+
 export function getConcerns() {
   return request<{ concerns: string[] }>("/api/submissions/concerns");
 }

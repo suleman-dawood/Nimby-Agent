@@ -18,7 +18,7 @@ import {
   getCitation,
   getSuggestions,
   streamAsk,
-  streamImpact,
+  streamImpactFast,
 } from "@/lib/api";
 
 interface Citation {
@@ -53,7 +53,7 @@ export default function ChatPanel({
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
-  const [impactLoaded, setImpactLoaded] = useState(false);
+  const impactFired = useRef(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const { data: suggestions } = useQuery({
@@ -144,13 +144,12 @@ export default function ChatPanel({
 
   // Start loading impact immediately on mount (even when collapsed)
   useEffect(() => {
-    if (!impactLoaded && address) {
-      setImpactLoaded(true);
-      startStream((cb) =>
-        streamImpact(ppNumber, address, distanceKm, cb)
-      );
-    }
-  }, [impactLoaded, address, ppNumber, distanceKm, startStream]);
+    if (impactFired.current || !address) return;
+    impactFired.current = true;
+    startStream((cb) =>
+      streamImpactFast(ppNumber, address, distanceKm, cb)
+    );
+  }, [address, ppNumber, distanceKm, startStream]);
 
   const handleSend = (q?: string) => {
     const question = q || input;
@@ -202,12 +201,12 @@ export default function ChatPanel({
 
   return (
     <div
+      className="chat-panel"
       style={{
         position: "fixed",
         right: 0,
         top: 52,
         bottom: 0,
-        width: 380,
         background: "var(--nsw-white)",
         borderLeft: "2px solid var(--nsw-brand-dark)",
         display: "flex",
@@ -415,6 +414,16 @@ export default function ChatPanel({
       <style>{`
         @keyframes blink {
           50% { opacity: 0; }
+        }
+        .chat-panel {
+          width: 380px;
+        }
+        @media (max-width: 640px) {
+          .chat-panel {
+            width: 100% !important;
+            left: 0;
+            border-left: none !important;
+          }
         }
         .chat-markdown p {
           margin: 0 0 8px 0;
