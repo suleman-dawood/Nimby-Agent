@@ -335,7 +335,9 @@ h1, h2, h3, h4, h5, h6,
 @media (max-width: 640px) {
   /* Global: tighten all containers */
   .mantine-AppShell-main {
-    padding: 0 !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    padding-bottom: 0 !important;
   }
   .mantine-Container-root {
     padding-left: 16px !important;
@@ -393,6 +395,9 @@ h1, h2, h3, h4, h5, h6,
   /* Forms */
   .address-search-row {
     flex-direction: column;
+  }
+  .address-search-row > :first-child {
+    width: 100% !important;
   }
   .address-search-row > :last-child {
     align-self: stretch !important;
