@@ -47,6 +47,7 @@ body {
   background: var(--nsw-brand-dark) !important;
   border-bottom: 4px solid var(--nsw-brand-accent) !important;
   border-radius: 0 !important;
+  z-index: 200 !important;
 }
 
 .mantine-AppShell-navbar {
@@ -394,7 +395,8 @@ h1, h2, h3, h4, h5, h6,
     flex-direction: column;
   }
   .address-search-row > :last-child {
-    align-self: flex-start !important;
+    align-self: stretch !important;
+    width: 100% !important;
   }
   .form-row {
     flex-direction: column;
@@ -414,6 +416,8 @@ h1, h2, h3, h4, h5, h6,
   .search-box {
     padding: 16px !important;
     border-width: 1px !important;
+    position: relative;
+    z-index: 1;
   }
 
   /* Cards */

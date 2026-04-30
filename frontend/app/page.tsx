@@ -69,14 +69,8 @@ export default function SearchPage() {
               width: 60,
               height: 3,
               background: "var(--nsw-brand-dark)",
-              marginBottom: 12,
             }}
           />
-          <Text style={{ color: "var(--nsw-text-light)", fontSize: 15 }}>
-            Enter your address to discover planning proposals currently on
-            public exhibition in your area. Review the documents, understand
-            the impact, and have your say.
-          </Text>
         </div>
 
         <div
