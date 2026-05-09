@@ -21,11 +21,13 @@ RUN pip install --no-cache-dir \
     geopy \
     "pyjwt>=2.8" \
     "google-auth>=2.29" \
+    "google-adk>=1.0.0" \
     tqdm
 
 COPY api/ api/
 COPY pipeline/ pipeline/
 COPY scraper/ scraper/
+COPY agents/ agents/
 COPY data/briefs/ data/briefs/
 
 EXPOSE 8001

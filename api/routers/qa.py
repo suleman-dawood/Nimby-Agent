@@ -268,3 +268,18 @@ def impact(req: ImpactRequest):
 def suggestions(pp_number: str, session: Session = Depends(get_session)):
     questions = get_suggested_questions(pp_number, session)
     return SuggestionsResponse(questions=questions)
+
+
+# --- Agent endpoint (ADK) ---
+
+@router.post("/agent/stream")
+async def agent_stream(req: AskRequest):
+    """Stream agent response with tool-use indicators. Requires auth + tokens in future."""
+    import asyncio
+    from agents.streaming import stream_agent_response
+
+    async def generate():
+        async for chunk in stream_agent_response(req.pp_number, req.question, "anonymous"):
+            yield chunk
+
+    return StreamingResponse(generate(), media_type="text/event-stream")
