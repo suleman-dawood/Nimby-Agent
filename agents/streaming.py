@@ -21,11 +21,49 @@ from pipeline.llm_utils import normalize_citations, extract_citations
 logger = logging.getLogger(__name__)
 
 
+_credentials_ready = False
+
+
+def _ensure_credentials():
+    """Ensure Google ADC + Vertex AI env vars are set for ADK."""
+    global _credentials_ready
+    if _credentials_ready:
+        return
+
+    import os
+    import base64
+    import tempfile
+
+    # Set Vertex AI env vars for ADK
+    os.environ.setdefault("GOOGLE_GENAI_USE_VERTEXAI", "TRUE")
+    os.environ.setdefault("GOOGLE_CLOUD_PROJECT", os.environ.get("GCP_PROJECT", "gen-lang-client-0499400729"))
+    os.environ.setdefault("GOOGLE_CLOUD_LOCATION", os.environ.get("GCP_LOCATION", "us-central1"))
+
+    # Set ADC credentials from service account (same as pipeline/llm_utils.py)
+    if not os.environ.get("GOOGLE_APPLICATION_CREDENTIALS"):
+        sa_b64 = os.environ.get("GOOGLE_SA_KEY")
+        if sa_b64:
+            sa_json = base64.b64decode(sa_b64).decode("utf-8")
+            tmp = tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False)
+            tmp.write(sa_json)
+            tmp.close()
+            os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = tmp.name
+        elif os.environ.get("GOOGLE_SA_JSON"):
+            tmp = tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False)
+            tmp.write(os.environ["GOOGLE_SA_JSON"])
+            tmp.close()
+            os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = tmp.name
+
+    _credentials_ready = True
+
+
 async def stream_agent_response(pp_number: str, question: str, user_id: str):
     """Stream agent response as SSE events.
 
     Yields SSE-formatted strings compatible with the existing frontend.
     """
+    _ensure_credentials()
+
     from agents.planning_analyst import create_agent
 
     agent = create_agent()
