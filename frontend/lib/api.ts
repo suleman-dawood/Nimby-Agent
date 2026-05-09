@@ -1,8 +1,10 @@
+import { getAuthHeaders } from "./auth";
+
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`, {
-    headers: { "Content-Type": "application/json", ...options?.headers },
+    headers: { "Content-Type": "application/json", ...getAuthHeaders(), ...options?.headers },
     ...options,
   });
   if (!res.ok) {
@@ -126,7 +128,7 @@ export interface StreamCallbacks {
 async function streamRequest(path: string, body: object, callbacks: StreamCallbacks) {
   const res = await fetch(`${API_BASE}${path}`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...getAuthHeaders() },
     body: JSON.stringify(body),
   });
 

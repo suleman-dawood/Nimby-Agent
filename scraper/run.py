@@ -13,7 +13,7 @@ from scraper import repository
 from scraper.detail import fetch_and_parse_detail
 from scraper.download import download_document
 from scraper.fetch import create_client
-from scraper.index import fetch_index
+from scraper.index import fetch_index, fetch_all_stages
 from scraper.models import create_db_engine, create_session
 
 logger = logging.getLogger(__name__)
@@ -57,6 +57,8 @@ def print_summary(session) -> None:
 def main() -> None:
     parser = argparse.ArgumentParser(description="Scrape NSW Planning Proposals")
     parser.add_argument("--limit", type=int, default=None, help="Process only N PPs (for testing)")
+    parser.add_argument("--stages", type=str, default=None,
+                        help="Comma-separated stages to scrape (default: Under Exhibition). Use 'all' for all stages.")
     args = parser.parse_args()
 
     logging.basicConfig(
@@ -71,10 +73,19 @@ def main() -> None:
     client = create_client()
 
     try:
-        # 1. Fetch index
-        print("Fetching index...")
-        entries = fetch_index(client, DATA_DIR)
-        print(f"Found {len(entries)} PPs on index.")
+        # 1. Fetch index (supports multiple stages)
+        stages = None  # all stages
+        if args.stages:
+            if args.stages.lower() == "all":
+                stages = None
+            else:
+                stages = [s.strip() for s in args.stages.split(",")]
+        else:
+            stages = ["Under Exhibition"]  # default: backward-compatible
+
+        print(f"Fetching index (stages: {stages or 'all'})...")
+        entries = fetch_all_stages(client, DATA_DIR, stages=stages)
+        print(f"Found {len(entries)} PPs across stages.")
 
         if args.limit:
             entries = entries[: args.limit]
@@ -100,6 +111,9 @@ def main() -> None:
                     pp_number = meta["pp_number"]
                     repository.upsert_pp(session, pp_number, meta["slug"], meta["detail_url"], now)
 
+                # Prefer stage from index (reliable), fall back to detail page
+                stage = entry.get("stage") or meta["stage"]
+
                 repository.update_pp_metadata(
                     session,
                     pp_number,
@@ -109,7 +123,7 @@ def main() -> None:
                     description=meta["description"],
                     exhibition_start=meta["exhibition_start"],
                     exhibition_end=meta["exhibition_end"],
-                    stage=meta["stage"],
+                    stage=stage,
                     relevant_planning_authority=meta["relevant_planning_authority"],
                     raw_html_path=meta.get("raw_html_path", ""),
                     scraped_at=now,

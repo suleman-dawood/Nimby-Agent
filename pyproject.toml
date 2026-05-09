@@ -18,6 +18,8 @@ dependencies = [
     "cohere",
     "rank-bm25",
     "geopy",
+    "pyjwt>=2.8",
+    "google-auth>=2.29",
 ]
 
 [build-system]

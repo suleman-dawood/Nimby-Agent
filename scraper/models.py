@@ -4,6 +4,7 @@ import os
 
 from pgvector.sqlalchemy import Vector
 from sqlalchemy import (
+    Boolean,
     Column,
     Date,
     DateTime,
@@ -107,6 +108,33 @@ class Chunk(Base):
         Index("idx_chunks_doc", "document_id"),
         Index("idx_chunks_pp", "pp_number"),
     )
+
+
+class User(Base):
+    __tablename__ = "users"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    google_id = Column(String, unique=True, nullable=False)
+    email = Column(String, unique=True, nullable=False)
+    name = Column(String)
+    avatar_url = Column(String)
+    tokens_remaining = Column(Integer, nullable=False, default=50)
+    tokens_used = Column(Integer, nullable=False, default=0)
+    created_at = Column(DateTime, nullable=False)
+    last_login = Column(DateTime, nullable=False)
+
+
+class TokenUsage(Base):
+    __tablename__ = "token_usage"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    action = Column(String, nullable=False)       # "agent_chat" | "submission" | "brief"
+    tokens_spent = Column(Integer, nullable=False)
+    pp_number = Column(String)
+    created_at = Column(DateTime, nullable=False)
+
+    user = relationship("User")
 
 
 def create_db_engine(db_url: str = DATABASE_URL):

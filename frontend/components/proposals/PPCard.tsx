@@ -3,6 +3,24 @@
 import { Card, Text, Badge, Group, Stack } from "@mantine/core";
 import type { NearbyPP } from "@/lib/api";
 
+const STAGE_COLORS: Record<string, string> = {
+  "Pre-Gateway": "gray",
+  "Under Assessment": "yellow",
+  "Under Exhibition": "green",
+  "Post-Exhibition": "blue",
+  "Exhibition Closed": "orange",
+  "Finalised": "violet",
+};
+
+function stageBadge(stage: string | null) {
+  if (!stage) return null;
+  return (
+    <Badge size="xs" color={STAGE_COLORS[stage] || "gray"} variant="light">
+      {stage}
+    </Badge>
+  );
+}
+
 function daysBadge(exhibitionEnd: string | null) {
   if (!exhibitionEnd) return <Badge color="gray">No date</Badge>;
   const days = Math.ceil(
@@ -32,17 +50,20 @@ export default function PPCard({ pp, onClick }: Props) {
       style={{ cursor: onClick ? "pointer" : "default" }}
     >
       <Group justify="space-between" mb={8}>
-        <Text
-          style={{
-            fontFamily: "'Public Sans', Arial, sans-serif",
-            fontSize: 11,
-            fontWeight: 600,
-            textTransform: "uppercase",
-            letterSpacing: "0.05em",
-          }}
-        >
-          {pp.pp_number}
-        </Text>
+        <Group gap={6}>
+          <Text
+            style={{
+              fontFamily: "'Public Sans', Arial, sans-serif",
+              fontSize: 11,
+              fontWeight: 600,
+              textTransform: "uppercase",
+              letterSpacing: "0.05em",
+            }}
+          >
+            {pp.pp_number}
+          </Text>
+          {stageBadge(pp.stage)}
+        </Group>
         {daysBadge(pp.exhibition_end)}
       </Group>
 

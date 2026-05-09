@@ -6,9 +6,22 @@ import {
   Text,
   NavLink,
   Burger,
+  Badge,
+  Avatar,
+  Menu,
+  UnstyledButton,
 } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { usePathname, useRouter } from "next/navigation";
+import { useGoogleLogin } from "@react-oauth/google";
+import { useEffect, useState, useCallback } from "react";
+import {
+  exchangeGoogleToken,
+  getStoredUser,
+  signOut,
+  fetchMe,
+  type AuthUser,
+} from "@/lib/auth";
 
 const NAV_ITEMS = [
   { label: "Search", href: "/" },
@@ -20,6 +33,32 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const [opened, { toggle, close }] = useDisclosure(false);
   const pathname = usePathname();
   const router = useRouter();
+  const [user, setUser] = useState<AuthUser | null>(null);
+
+  useEffect(() => {
+    const stored = getStoredUser();
+    if (stored) {
+      setUser(stored);
+      fetchMe().then((u) => { if (u) setUser(u); });
+    }
+  }, []);
+
+  const login = useGoogleLogin({
+    onSuccess: async (response) => {
+      try {
+        const authRes = await exchangeGoogleToken(response.access_token);
+        setUser(authRes.user);
+      } catch (err) {
+        console.error("Auth failed:", err);
+      }
+    },
+    onError: () => console.error("Google login failed"),
+  });
+
+  const handleSignOut = useCallback(() => {
+    signOut();
+    setUser(null);
+  }, []);
 
   return (
     <MantineAppShell
@@ -78,17 +117,51 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
               </Text>
             </div>
           </Group>
-          <Text
-            className="header-subtitle"
-            style={{
-              fontFamily: "'Public Sans', sans-serif",
-              fontSize: 12,
-              color: "rgba(255,255,255,0.7)",
-              whiteSpace: "nowrap",
-            }}
-          >
-            Nimby Agent
-          </Text>
+
+          <Group gap={8} wrap="nowrap">
+            {user ? (
+              <Menu shadow="md" width={200}>
+                <Menu.Target>
+                  <UnstyledButton>
+                    <Group gap={6} wrap="nowrap">
+                      <Badge
+                        size="sm"
+                        variant="light"
+                        color="green"
+                        style={{ fontFamily: "'Public Sans', sans-serif" }}
+                      >
+                        {user.tokens_remaining} tokens
+                      </Badge>
+                      <Avatar
+                        src={user.avatar_url}
+                        alt={user.name || "User"}
+                        size={28}
+                        radius="xl"
+                      />
+                    </Group>
+                  </UnstyledButton>
+                </Menu.Target>
+                <Menu.Dropdown>
+                  <Menu.Label>{user.name || user.email}</Menu.Label>
+                  <Menu.Item onClick={handleSignOut}>Sign out</Menu.Item>
+                </Menu.Dropdown>
+              </Menu>
+            ) : (
+              <UnstyledButton onClick={() => login()}>
+                <Text
+                  style={{
+                    fontFamily: "'Public Sans', sans-serif",
+                    fontSize: 13,
+                    fontWeight: 600,
+                    color: "var(--nsw-white)",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  Sign in
+                </Text>
+              </UnstyledButton>
+            )}
+          </Group>
         </Group>
       </MantineAppShell.Header>
 

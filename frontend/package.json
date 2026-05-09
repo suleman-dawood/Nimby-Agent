@@ -8,6 +8,7 @@
     "start": "next start"
   },
   "dependencies": {
+    "@react-oauth/google": "^0.12.1",
     "@emotion/react": "^11.14.0",
     "@mantine/core": "^9.1.1",
     "@mantine/form": "^9.1.1",
