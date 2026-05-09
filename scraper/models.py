@@ -163,6 +163,37 @@ class SiteContext(Base):
     pp = relationship("PP")
 
 
+class Watcher(Base):
+    __tablename__ = "watchers"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    email = Column(String, nullable=False)
+    address = Column(String, nullable=False)
+    lat = Column(Float, nullable=False)
+    lng = Column(Float, nullable=False)
+    radius_km = Column(Float, nullable=False, default=5.0)
+    webhook_url = Column(String, nullable=True)
+    created_at = Column(DateTime, nullable=False)
+    active = Column(Boolean, nullable=False, default=True)
+
+    user = relationship("User")
+
+
+class Notification(Base):
+    __tablename__ = "notifications"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    watcher_id = Column(Integer, ForeignKey("watchers.id"), nullable=False)
+    pp_number = Column(String, ForeignKey("pps.pp_number"), nullable=False)
+    channel = Column(String, nullable=False)
+    status = Column(String, nullable=False)
+    payload = Column(Text)
+    sent_at = Column(DateTime, nullable=False)
+
+    watcher = relationship("Watcher")
+
+
 def create_db_engine(db_url: str = DATABASE_URL):
     connect_args = {}
     if db_url.startswith("sqlite"):
