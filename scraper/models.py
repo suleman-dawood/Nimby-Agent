@@ -137,6 +137,32 @@ class TokenUsage(Base):
     user = relationship("User")
 
 
+class SiteContext(Base):
+    __tablename__ = "site_contexts"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    pp_number = Column(String, ForeignKey("pps.pp_number"), unique=True, nullable=False)
+    zoning = Column(String)
+    max_height_m = Column(Float)
+    max_fsr = Column(Float)
+    min_lot_size_sqm = Column(Float)
+    heritage_item = Column(String)
+    heritage_state = Column(Boolean, default=False)
+    bushfire_prone = Column(Boolean, default=False)
+    bushfire_category = Column(String)
+    flood_planning = Column(Boolean, default=False)
+    landslide_risk = Column(String)
+    acid_sulfate_class = Column(Integer)
+    biodiversity_sensitive = Column(Boolean, default=False)
+    drinking_water_catchment = Column(Boolean, default=False)
+    wetlands_nearby = Column(Boolean, default=False)
+    environmentally_sensitive = Column(String)
+    raw_json = Column(Text)
+    queried_at = Column(DateTime, nullable=False)
+
+    pp = relationship("PP")
+
+
 def create_db_engine(db_url: str = DATABASE_URL):
     connect_args = {}
     if db_url.startswith("sqlite"):

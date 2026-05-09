@@ -6,7 +6,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from api.deps import configure_api_keys
-from api.routers import auth, briefs, qa, search, submissions, tokens
+from api.routers import auth, briefs, qa, search, site_context, submissions, tokens
 
 
 @asynccontextmanager
@@ -38,6 +38,7 @@ app.include_router(briefs.router)
 app.include_router(qa.router)
 app.include_router(submissions.router)
 app.include_router(tokens.router)
+app.include_router(site_context.router)
 
 
 @app.get("/api/health")
