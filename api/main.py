@@ -57,3 +57,41 @@ async def trigger_scrape():
     """Manual trigger for scrape + notify cycle. For demos."""
     from workers.scheduler import trigger_scrape
     return await trigger_scrape()
+
+
+_batch_task = None
+
+@app.post("/api/admin/batch-process")
+async def batch_process(stages: str = "all", batch_size: int = 5):
+    """Run full batch pipeline (scrape → extract → embed → cleanup) on Railway.
+
+    Runs as background task — returns immediately. Check /api/admin/batch-status for progress.
+    """
+    global _batch_task
+
+    if _batch_task and not _batch_task.done():
+        return {"status": "already_running"}
+
+    async def _run():
+        import asyncio
+        from pipeline.process_batch import process_all_batched
+        stage_list = None if stages == "all" else [s.strip() for s in stages.split(",")]
+        await asyncio.to_thread(process_all_batched, stages=stage_list, batch_size=batch_size)
+
+    _batch_task = asyncio.create_task(_run())
+    return {"status": "started", "stages": stages, "batch_size": batch_size}
+
+
+@app.get("/api/admin/batch-status")
+async def batch_status():
+    """Check batch processing status."""
+    global _batch_task
+
+    if _batch_task is None:
+        return {"status": "never_started"}
+    if _batch_task.done():
+        exc = _batch_task.exception()
+        if exc:
+            return {"status": "failed", "error": str(exc)}
+        return {"status": "completed"}
+    return {"status": "running"}
