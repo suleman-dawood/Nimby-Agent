@@ -17,18 +17,27 @@ import {
   getCitation,
   getSuggestions,
   streamAsk,
+  streamAgentAsk,
   streamImpactFast,
 } from "@/lib/api";
+import { isAuthenticated } from "@/lib/auth";
+import ToolCallIndicator from "@/components/common/ToolCallIndicator";
 
 interface Citation {
   document_title: string;
   page: number;
 }
 
+interface ToolCall {
+  tool: string;
+  status: "calling" | "done";
+}
+
 interface Message {
   role: "user" | "assistant";
   content: string;
   citations?: Citation[];
+  toolCalls?: ToolCall[];
   streaming?: boolean;
 }
 
@@ -72,6 +81,7 @@ export default function ChatPanel({
       streamFn: (callbacks: {
         onToken: (t: string) => void;
         onCitations: (c: Citation[]) => void;
+        onToolCall?: (tool: string, status: "calling" | "done") => void;
         onError: (e: string) => void;
         onDone: () => void;
       }) => Promise<void>
@@ -81,7 +91,7 @@ export default function ChatPanel({
       // Add empty assistant message
       setMessages((prev) => [
         ...prev,
-        { role: "assistant", content: "", streaming: true },
+        { role: "assistant", content: "", streaming: true, toolCalls: [] },
       ]);
 
       let accumulated = "";
@@ -98,6 +108,24 @@ export default function ChatPanel({
                 content: accumulated,
                 streaming: true,
               };
+            }
+            return updated;
+          });
+          scrollToBottom();
+        },
+        onToolCall: (tool, status) => {
+          setMessages((prev) => {
+            const updated = [...prev];
+            const last = updated[updated.length - 1];
+            if (last.role === "assistant") {
+              const calls = [...(last.toolCalls || [])];
+              const existing = calls.findIndex((c) => c.tool === tool);
+              if (existing >= 0) {
+                calls[existing] = { tool, status };
+              } else {
+                calls.push({ tool, status });
+              }
+              updated[updated.length - 1] = { ...last, toolCalls: calls };
             }
             return updated;
           });
@@ -157,7 +185,12 @@ export default function ChatPanel({
     setMessages((prev) => [...prev, { role: "user", content: question }]);
     setInput("");
 
-    startStream((cb) => streamAsk(ppNumber, question, cb));
+    // Use agent endpoint if authenticated, fallback to basic stream
+    if (isAuthenticated()) {
+      startStream((cb) => streamAgentAsk(ppNumber, question, cb));
+    } else {
+      startStream((cb) => streamAsk(ppNumber, question, cb));
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -282,6 +315,13 @@ export default function ChatPanel({
                     lineHeight: 1.7,
                   }}
                 >
+                  {msg.toolCalls && msg.toolCalls.length > 0 && (
+                    <div style={{ marginBottom: 8 }}>
+                      {msg.toolCalls.map((tc) => (
+                        <ToolCallIndicator key={tc.tool} tool={tc.tool} status={tc.status} />
+                      ))}
+                    </div>
+                  )}
                   <div className="chat-markdown">
                     <ReactMarkdown>
                       {msg.content.replace(CITE_RE, "")}

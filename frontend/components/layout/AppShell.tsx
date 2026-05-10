@@ -24,9 +24,10 @@ import {
 } from "@/lib/auth";
 
 const NAV_ITEMS = [
-  { label: "Search", href: "/" },
-  { label: "Results", href: "/results" },
-  { label: "About", href: "/about" },
+  { label: "Search", href: "/", auth: false },
+  { label: "Results", href: "/results", auth: false },
+  { label: "Dashboard", href: "/dashboard", auth: true },
+  { label: "About", href: "/about", auth: false },
 ];
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
@@ -166,7 +167,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       </MantineAppShell.Header>
 
       <MantineAppShell.Navbar p="xs" pt="md">
-        {NAV_ITEMS.map((item) => (
+        {NAV_ITEMS.filter((item) => !item.auth || !!user).map((item) => (
           <NavLink
             key={item.href}
             label={item.label}

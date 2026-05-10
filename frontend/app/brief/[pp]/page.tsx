@@ -11,6 +11,7 @@ import {
   Loader,
   Center,
   Alert,
+  Tabs,
 } from "@mantine/core";
 import { useQuery } from "@tanstack/react-query";
 import { useParams, useRouter } from "next/navigation";
@@ -18,6 +19,7 @@ import { useState, useEffect } from "react";
 import { getBrief, getCitation } from "@/lib/api";
 import BriefViewer from "@/components/brief/BriefViewer";
 import ChatPanel from "@/components/brief/ChatPanel";
+import SiteContextTab from "@/components/brief/SiteContextTab";
 
 export default function BriefPage() {
   const params = useParams();
@@ -139,10 +141,23 @@ export default function BriefPage() {
             </Text>
           </div>
 
-          <BriefViewer
-            markdown={data.markdown}
-            onCitationClick={handleCitationClick}
-          />
+          <Tabs defaultValue="brief" style={{ marginTop: 8 }}>
+            <Tabs.List>
+              <Tabs.Tab value="brief">Brief</Tabs.Tab>
+              <Tabs.Tab value="site-context">Site Context</Tabs.Tab>
+            </Tabs.List>
+
+            <Tabs.Panel value="brief" pt="md">
+              <BriefViewer
+                markdown={data.markdown}
+                onCitationClick={handleCitationClick}
+              />
+            </Tabs.Panel>
+
+            <Tabs.Panel value="site-context" pt="md">
+              <SiteContextTab ppNumber={ppNumber} />
+            </Tabs.Panel>
+          </Tabs>
 
           <div
             style={{

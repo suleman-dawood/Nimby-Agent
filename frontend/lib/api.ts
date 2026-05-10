@@ -121,6 +121,7 @@ export function getImpact(ppNumber: string, address: string, distanceKm: number)
 export interface StreamCallbacks {
   onToken: (token: string) => void;
   onCitations: (citations: { document_title: string; page: number }[]) => void;
+  onToolCall?: (tool: string, status: "calling" | "done") => void;
   onError: (error: string) => void;
   onDone: () => void;
 }
@@ -160,6 +161,7 @@ async function streamRequest(path: string, body: object, callbacks: StreamCallba
         const parsed = JSON.parse(data);
         if (parsed.type === "token") callbacks.onToken(parsed.content);
         else if (parsed.type === "citations") callbacks.onCitations(parsed.citations);
+        else if (parsed.type === "tool_call" && callbacks.onToolCall) callbacks.onToolCall(parsed.tool, parsed.status);
         else if (parsed.type === "error") callbacks.onError(parsed.content);
       } catch {}
     }
@@ -194,4 +196,87 @@ export function generateSubmission(params: {
     method: "POST",
     body: JSON.stringify(params),
   });
+}
+
+// --- Site Context ---
+
+export interface SiteContextResponse {
+  pp_number: string;
+  zoning: string | null;
+  max_height_m: number | null;
+  max_fsr: number | null;
+  min_lot_size_sqm: number | null;
+  heritage_item: string | null;
+  heritage_state: boolean;
+  bushfire_prone: boolean;
+  bushfire_category: string | null;
+  flood_planning: boolean;
+  landslide_risk: string | null;
+  acid_sulfate_class: number | null;
+  biodiversity_sensitive: boolean;
+  drinking_water_catchment: boolean;
+  wetlands_nearby: boolean;
+  environmentally_sensitive: string | null;
+  queried_at: string | null;
+}
+
+export function getSiteContext(ppNumber: string) {
+  return request<SiteContextResponse>(`/api/site-context/${ppNumber}`);
+}
+
+// --- Agent Chat ---
+
+export function streamAgentAsk(ppNumber: string, question: string, callbacks: StreamCallbacks) {
+  return streamRequest("/api/qa/agent/stream", { pp_number: ppNumber, question }, callbacks);
+}
+
+// --- Watchers ---
+
+export interface WatcherResponse {
+  id: number;
+  email: string;
+  address: string;
+  lat: number;
+  lng: number;
+  radius_km: number;
+  webhook_url: string | null;
+  active: boolean;
+  created_at: string;
+}
+
+export interface NotificationResponse {
+  id: number;
+  pp_number: string;
+  channel: string;
+  status: string;
+  sent_at: string;
+}
+
+export function createWatcher(data: { address: string; lat: number; lng: number; radius_km: number; webhook_url?: string }) {
+  return request<WatcherResponse>("/api/watchers", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+export function getWatchers() {
+  return request<WatcherResponse[]>("/api/watchers");
+}
+
+export function deleteWatcher(id: number) {
+  return request<{ status: string }>(`/api/watchers/${id}`, { method: "DELETE" });
+}
+
+export function getWatcherNotifications(id: number) {
+  return request<NotificationResponse[]>(`/api/watchers/${id}/notifications`);
+}
+
+// --- Tokens ---
+
+export function getTokenBalance() {
+  return request<{ tokens_remaining: number; tokens_used: number }>("/api/tokens/balance");
+}
+
+export function getTokenHistory() {
+  return request<{ usage: { id: number; action: string; tokens_spent: number; pp_number: string | null; created_at: string }[] }>("/api/tokens/history");
 }
