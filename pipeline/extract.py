@@ -55,6 +55,7 @@ def extract_document(session: Session, doc: Document) -> dict:
                     text = ""
 
                 text = text.strip()
+                text = text.replace("\x00", "")  # Strip null bytes (crashes PostgreSQL)
 
                 if len(text) < MIN_CHARS_PER_PAGE:
                     method = "failed"
