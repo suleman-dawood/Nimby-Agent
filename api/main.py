@@ -16,8 +16,22 @@ async def lifespan(app: FastAPI):
     # Start background worker
     from workers.scheduler import worker_loop
     task = asyncio.create_task(worker_loop())
+    # Auto-start batch process on boot (resumes from where it left off)
+    asyncio.create_task(_auto_batch())
     yield
     task.cancel()
+
+
+async def _auto_batch():
+    """Auto-trigger batch processing 60s after startup."""
+    await asyncio.sleep(60)
+    global _batch_task
+    if _batch_task and not _batch_task.done():
+        return  # already running
+    from pipeline.process_batch import process_all_batched
+    async def _run():
+        await asyncio.to_thread(process_all_batched, stages=None, batch_size=3)
+    _batch_task = asyncio.create_task(_run())
 
 
 app = FastAPI(
