@@ -7,10 +7,8 @@ Each batch: download docs, extract text, embed chunks, delete PDFs.
 from __future__ import annotations
 
 import argparse
-import glob
 import logging
 import os
-import shutil
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -20,7 +18,9 @@ from scraper.download import download_document
 from scraper.fetch import create_client
 from scraper.index import fetch_all_stages
 from scraper.models import PP, Document, Chunk, create_db_engine, create_session
-from pipeline.classify import classify_document
+from pipeline.extract import extract_document
+from pipeline.embed import embed_all
+from pipeline.classify import classify_all
 from pipeline.spatial import enrich_pp
 
 logger = logging.getLogger(__name__)
@@ -31,20 +31,19 @@ DATA_DIR = Path("data")
 def _delete_pdfs():
     """Delete all downloaded PDFs to free disk space."""
     docs_dir = DATA_DIR / "documents"
-    if docs_dir.exists():
-        count = 0
-        for f in docs_dir.iterdir():
-            if f.is_file():
-                f.unlink()
-                count += 1
+    if not docs_dir.exists():
+        return
+    count = 0
+    for f in docs_dir.iterdir():
+        if f.is_file():
+            f.unlink()
+            count += 1
+    if count:
         logger.info("Deleted %d PDF files", count)
 
 
-def _extract_and_embed_pp(session, pp_number: str):
-    """Extract text and embed chunks for all docs of a PP."""
-    from pipeline.extract import extract_document
-    from pipeline.embed import embed_chunks_for_document
-
+def _extract_pp(session, pp_number: str) -> int:
+    """Extract text from all downloaded tier 1/2 docs for a PP. Returns chunk count."""
     docs = (
         session.query(Document)
         .filter_by(pp_number=pp_number, download_status="ok")
@@ -52,42 +51,21 @@ def _extract_and_embed_pp(session, pp_number: str):
         .all()
     )
 
+    chunks_created = 0
     for doc in docs:
-        # Skip if already has chunks
-        if session.query(Chunk).filter_by(document_id=doc.id).first():
+        if repository.has_chunks(session, doc.id):
             continue
-
         if not doc.file_path or not os.path.exists(doc.file_path):
-            continue
-
-        # Skip huge files (>100MB)
-        try:
-            size = os.path.getsize(doc.file_path)
-            if size > 100_000_000:
-                logger.warning("Skipping %s — too large (%d MB)", doc.title[:40], size // 1_000_000)
-                continue
-        except OSError:
+            logger.warning("File missing: doc %d (%s) path=%s", doc.id, doc.title[:40], doc.file_path)
             continue
 
         try:
-            extract_document(session, doc)
+            stats = extract_document(session, doc)
+            chunks_created += stats.get("chunks_ok", 0)
         except Exception:
-            logger.exception("Extract failed for doc %d (%s)", doc.id, doc.title[:40])
-            continue
+            logger.exception("Extract failed: doc %d (%s)", doc.id, doc.title[:40])
 
-    # Embed all un-embedded chunks for this PP
-    chunks = (
-        session.query(Chunk)
-        .filter_by(pp_number=pp_number)
-        .filter(Chunk.embedding.is_(None))
-        .all()
-    )
-    if chunks:
-        try:
-            from pipeline.embed import embed_chunks
-            embed_chunks(session, chunks)
-        except Exception:
-            logger.exception("Embedding failed for %s", pp_number)
+    return chunks_created
 
 
 def process_all_batched(stages: list[str] | None = None, batch_size: int = 10):
@@ -105,17 +83,30 @@ def process_all_batched(stages: list[str] | None = None, batch_size: int = 10):
         all_entries = fetch_all_stages(client, DATA_DIR, stages=stages)
         print(f"Found {len(all_entries)} PPs total")
 
+        # Filter to PPs that need chunks
+        pps_with_chunks = set(r[0] for r in session.query(Chunk.pp_number).distinct().all())
+        entries_needing_work = [
+            e for e in all_entries
+            if (e.get("pp_number") or e.get("slug")) not in pps_with_chunks
+        ]
+        print(f"PPs already with chunks: {len(pps_with_chunks)}")
+        print(f"PPs needing processing: {len(entries_needing_work)}")
+
+        total_chunks = 0
+        total_embedded = 0
+
         # 2. Process in batches
-        for batch_start in range(0, len(all_entries), batch_size):
-            batch = all_entries[batch_start:batch_start + batch_size]
-            batch_end = min(batch_start + batch_size, len(all_entries))
+        for batch_start in range(0, len(entries_needing_work), batch_size):
+            batch = entries_needing_work[batch_start:batch_start + batch_size]
+            batch_num = batch_start // batch_size + 1
+            total_batches = (len(entries_needing_work) + batch_size - 1) // batch_size
             print(f"\n{'='*60}")
-            print(f"BATCH {batch_start // batch_size + 1}: PPs {batch_start + 1}-{batch_end} of {len(all_entries)}")
+            print(f"BATCH {batch_num}/{total_batches}: PPs {batch_start+1}-{batch_start+len(batch)}")
             print(f"{'='*60}")
 
             batch_pp_numbers = []
 
-            # 2a. Scrape + download
+            # 2a. Scrape + download each PP
             for entry in batch:
                 pp_number = entry.get("pp_number") or entry["slug"]
                 now = datetime.now(timezone.utc)
@@ -143,7 +134,6 @@ def process_all_batched(stages: list[str] | None = None, batch_size: int = 10):
                         scraped_at=now,
                     )
 
-                    # Classify + download docs
                     docs = meta.get("documents", [])
                     for doc in docs:
                         repository.upsert_document(session, pp_number, doc["title"], doc.get("category"), doc["url"], now)
@@ -152,43 +142,43 @@ def process_all_batched(stages: list[str] | None = None, batch_size: int = 10):
                         download_document(client, pp_number, doc["url"], DATA_DIR, session)
 
                     batch_pp_numbers.append(pp_number)
+                    print(f"  Scraped {pp_number} ({len(docs)} docs)")
 
                 except Exception:
                     logger.exception("Failed to scrape %s", pp_number)
-                    continue
 
-            # 2b. Classify all docs in batch
-            print(f"Classifying documents...")
-            from pipeline.classify import classify_all
+            # 2b. Classify
+            print("Classifying...")
             classify_all(session)
 
-            # 2c. Extract + embed for each PP in batch
+            # 2c. Extract text from PDFs
+            batch_chunks = 0
             for pp_number in batch_pp_numbers:
-                print(f"Extracting + embedding {pp_number}...")
-                try:
-                    _extract_and_embed_pp(session, pp_number)
-                except Exception:
-                    logger.exception("Extract/embed failed for %s", pp_number)
+                n = _extract_pp(session, pp_number)
+                batch_chunks += n
+                if n:
+                    print(f"  Extracted {pp_number}: {n} chunks")
 
-            # 2d. Spatial enrichment
-            for pp_number in batch_pp_numbers:
-                pp = session.get(PP, pp_number)
-                if pp and pp.latitude and pp.longitude:
-                    try:
-                        enrich_pp(session, pp_number, pp.latitude, pp.longitude)
-                    except Exception:
-                        logger.exception("Spatial enrich failed for %s", pp_number)
+            total_chunks += batch_chunks
+            print(f"Batch chunks extracted: {batch_chunks}")
 
-            # 2e. Delete PDFs to free space
-            print(f"Cleaning up PDFs...")
+            # 2d. Embed all new chunks
+            pre_embed = session.query(Chunk).filter(Chunk.embedding.isnot(None)).count()
+            if batch_chunks > 0:
+                print("Embedding...")
+                embed_all(session, tiers=[1, 2])
+            post_embed = session.query(Chunk).filter(Chunk.embedding.isnot(None)).count()
+            new_embedded = post_embed - pre_embed
+            total_embedded += new_embedded
+            print(f"Batch embedded: {new_embedded}")
+
+            # 2e. Delete PDFs
             _delete_pdfs()
-
-            # Summary for this batch
-            print(f"Batch complete: {len(batch_pp_numbers)} PPs processed")
+            print(f"PDFs cleaned up")
 
         # Final summary
-        pp_count = repository.count_pps(session)
-        doc_count = repository.count_documents(session)
+        pp_count = session.query(PP).count()
+        doc_count = session.query(Document).count()
         chunk_count = session.query(Chunk).count()
         embedded = session.query(Chunk).filter(Chunk.embedding.isnot(None)).count()
 
@@ -197,8 +187,10 @@ def process_all_batched(stages: list[str] | None = None, batch_size: int = 10):
         print(f"{'='*60}")
         print(f"PPs in DB:          {pp_count}")
         print(f"Documents:          {doc_count}")
-        print(f"Chunks:             {chunk_count}")
+        print(f"Total chunks:       {chunk_count}")
         print(f"Embedded chunks:    {embedded}")
+        print(f"New chunks:         {total_chunks}")
+        print(f"New embedded:       {total_embedded}")
         print(f"{'='*60}")
 
     finally:
