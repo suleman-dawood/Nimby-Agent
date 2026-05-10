@@ -22,7 +22,8 @@ RUN pip install --no-cache-dir \
     "pyjwt>=2.8" \
     "google-auth>=2.29" \
     "google-adk>=1.0.0" \
-    tqdm
+    tqdm \
+    pdfplumber
 
 COPY api/ api/
 COPY pipeline/ pipeline/
