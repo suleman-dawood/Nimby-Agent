@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 from api.deps import get_session
 from api.schemas.briefs import BriefResponse, CitationRequest, CitationResponse
 from pipeline.llm_utils import find_chunk
-from scraper.models import PP, Document
+from scraper.models import PP, Brief, Document
 
 router = APIRouter(prefix="/api/briefs", tags=["briefs"])
 
@@ -23,12 +23,16 @@ def get_brief(pp_number: str, session: Session = Depends(get_session)):
     if not pp:
         raise HTTPException(status_code=404, detail=f"PP {pp_number} not found")
 
-    brief_path = os.path.join(BRIEFS_DIR, f"{pp_number}.md")
-    if not os.path.exists(brief_path):
-        raise HTTPException(status_code=404, detail=f"Brief for {pp_number} not generated yet")
-
-    with open(brief_path) as f:
-        markdown = f.read()
+    # Try DB first, fall back to file
+    brief = session.query(Brief).filter_by(pp_number=pp_number).first()
+    if brief:
+        markdown = brief.markdown
+    else:
+        brief_path = os.path.join(BRIEFS_DIR, f"{pp_number}.md")
+        if not os.path.exists(brief_path):
+            raise HTTPException(status_code=404, detail=f"Brief for {pp_number} not generated yet")
+        with open(brief_path) as f:
+            markdown = f.read()
 
     return BriefResponse(
         pp_number=pp_number,

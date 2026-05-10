@@ -163,6 +163,19 @@ class SiteContext(Base):
     pp = relationship("PP")
 
 
+class Brief(Base):
+    __tablename__ = "briefs"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    pp_number = Column(String, ForeignKey("pps.pp_number"), unique=True, nullable=False)
+    markdown = Column(Text, nullable=False)
+    doc_count = Column(Integer)  # number of docs used to generate
+    chunk_count = Column(Integer)  # number of chunks at generation time
+    generated_at = Column(DateTime, nullable=False)
+
+    pp = relationship("PP")
+
+
 class Watcher(Base):
     __tablename__ = "watchers"
 

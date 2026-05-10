@@ -1,149 +1,331 @@
 """Background worker loop for auto-scraping and notifications.
 
-Runs inside FastAPI lifespan on Railway — no separate service needed.
+Handles:
+- New proposals across all stages
+- Document changes (added/removed) on existing proposals
+- Stage transitions
+- Geocoding, spatial enrichment
+- Brief generation for PPs with chunks but no brief
 """
 
 from __future__ import annotations
 
 import asyncio
+import json
 import logging
+import os
 from datetime import datetime, timezone
 from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
 SCRAPE_INTERVAL_HOURS = 6
+DATA_DIR = Path("/tmp/nimby_scrape")
 
 
 async def worker_loop():
-    """Main background worker. Scrapes all stages, enriches, notifies."""
-    # Wait 30s after startup before first run
+    """Main background worker. Runs every 6 hours."""
     await asyncio.sleep(30)
 
     while True:
         try:
-            logger.info("Worker: starting scrape cycle")
-            new_pp_numbers = await _scrape_and_enrich()
-            logger.info("Worker: found %d new proposals", len(new_pp_numbers))
-
-            if new_pp_numbers:
-                from workers.notify import notify_watchers_for_new_pps
-                await notify_watchers_for_new_pps(new_pp_numbers)
-
-            logger.info("Worker: cycle complete, sleeping %d hours", SCRAPE_INTERVAL_HOURS)
+            logger.info("Worker: starting cycle")
+            result = await asyncio.to_thread(_run_cycle)
+            logger.info("Worker: cycle complete — %s", result)
         except Exception:
             logger.exception("Worker: cycle failed")
 
         await asyncio.sleep(SCRAPE_INTERVAL_HOURS * 3600)
 
 
-async def _scrape_and_enrich() -> list[str]:
-    """Scrape all stages, detect new PPs, enrich with spatial data.
-
-    Returns list of new pp_numbers.
-    """
+def _run_cycle() -> dict:
+    """Full sync cycle. Runs in thread."""
     from scraper.index import fetch_all_stages
     from scraper.detail import fetch_and_parse_detail
     from scraper.download import download_document
     from scraper.fetch import create_client
     from scraper import repository
-    from scraper.models import PP, create_db_engine, create_session
+    from scraper.models import PP, Document, Chunk, create_db_engine, create_session
     from pipeline.spatial import enrich_pp
     from pipeline.geocode import geocode_pp
+    from pipeline.extract import extract_document
+    from pipeline.embed import embed_all
+    from pipeline.classify import classify_all
 
     engine = create_db_engine()
     session = create_session(engine)
     client = create_client()
-    data_dir = Path("/tmp/nimby_scrape")
-    data_dir.mkdir(parents=True, exist_ok=True)
+    DATA_DIR.mkdir(parents=True, exist_ok=True)
+    (DATA_DIR / "raw_html").mkdir(exist_ok=True)
+    (DATA_DIR / "documents").mkdir(exist_ok=True)
 
-    new_pp_numbers = []
+    stats = {
+        "new_pps": [],
+        "stage_changes": [],
+        "doc_changes": [],
+        "geocoded": 0,
+        "spatial_enriched": 0,
+        "briefs_generated": 0,
+    }
 
     try:
         # 1. Fetch all stage indexes
-        all_entries = fetch_all_stages(client, data_dir, stages=["Under Exhibition"])
+        all_entries = fetch_all_stages(client, DATA_DIR, stages=None)
+        existing_pps = {pp.pp_number: pp for pp in session.query(PP).all()}
+        logger.info("Worker: %d entries from portal, %d in DB", len(all_entries), len(existing_pps))
 
-        # 2. Detect new entries (not in DB)
-        existing = {pp.pp_number for pp in session.query(PP.pp_number).all()}
-
-        new_entries = []
         for entry in all_entries:
-            pp_num = entry.get("pp_number")
-            if pp_num and pp_num not in existing:
-                new_entries.append(entry)
-
-        logger.info("Worker: %d new PPs detected (of %d total)", len(new_entries), len(all_entries))
-
-        # 3. Process each new PP
-        for entry in new_entries:
-            pp_number = entry.get("pp_number") or entry["slug"]
+            pp_number = entry.get("pp_number")
+            if not pp_number:
+                continue
             now = datetime.now(timezone.utc)
 
             try:
-                repository.upsert_pp(session, pp_number, entry.get("slug", ""), entry["detail_url"], now)
+                if pp_number not in existing_pps:
+                    # --- NEW PP ---
+                    _process_new_pp(session, client, entry, now)
+                    stats["new_pps"].append(pp_number)
+                else:
+                    # --- EXISTING PP: check stage + docs ---
+                    pp = existing_pps[pp_number]
 
-                meta = fetch_and_parse_detail(client, entry["detail_url"], pp_number, data_dir)
+                    # Stage transition
+                    new_stage = entry.get("stage")
+                    if new_stage and pp.stage != new_stage:
+                        logger.info("Stage: %s %s → %s", pp_number, pp.stage, new_stage)
+                        pp.stage = new_stage
+                        session.commit()
+                        stats["stage_changes"].append(pp_number)
 
-                if meta["pp_number"] != pp_number:
-                    repository.delete_pp(session, pp_number)
-                    pp_number = meta["pp_number"]
-                    repository.upsert_pp(session, pp_number, meta["slug"], meta["detail_url"], now)
-
-                stage = entry.get("stage") or meta["stage"]
-                repository.update_pp_metadata(
-                    session, pp_number,
-                    title=meta["title"], council=meta["council"],
-                    addresses=meta["addresses"], description=meta["description"],
-                    exhibition_start=meta["exhibition_start"],
-                    exhibition_end=meta["exhibition_end"],
-                    stage=stage,
-                    relevant_planning_authority=meta["relevant_planning_authority"],
-                    raw_html_path=meta.get("raw_html_path", ""),
-                    scraped_at=now,
-                )
-
-                # Geocode
-                pp = session.get(PP, pp_number)
-                if pp and not pp.latitude:
-                    try:
-                        geocode_pp(session, pp)
-                    except Exception:
-                        logger.warning("Geocoding failed for %s", pp_number)
-
-                # Spatial enrichment
-                pp = session.get(PP, pp_number)
-                if pp and pp.latitude and pp.longitude:
-                    enrich_pp(session, pp_number, pp.latitude, pp.longitude)
-
-                new_pp_numbers.append(pp_number)
-                logger.info("Worker: processed %s", pp_number)
+                    # Doc changes — re-fetch detail and diff
+                    doc_changes = _check_doc_changes(session, client, pp, entry, now)
+                    if doc_changes:
+                        stats["doc_changes"].append(pp_number)
 
             except Exception:
-                logger.exception("Worker: failed to process %s", pp_number)
-                continue
+                logger.exception("Worker: failed %s", pp_number)
 
-        # 4. Detect stage transitions for existing PPs
-        for entry in all_entries:
-            pp_num = entry.get("pp_number")
-            if pp_num and pp_num in existing:
-                pp = session.get(PP, pp_num)
-                new_stage = entry.get("stage")
-                if pp and new_stage and pp.stage != new_stage:
-                    logger.info("Stage transition: %s %s → %s", pp_num, pp.stage, new_stage)
-                    pp.stage = new_stage
-                    session.commit()
+        # 2. Geocode PPs missing coordinates
+        ungeo = session.query(PP).filter(PP.latitude.is_(None)).all()
+        for pp in ungeo[:20]:  # batch 20 at a time to avoid rate limits
+            try:
+                result = geocode_pp(session, pp)
+                if result:
+                    lat, lng, src = result
+                    repository.update_pp_geocode(session, pp.pp_number, lat, lng, src)
+                    stats["geocoded"] += 1
+            except Exception:
+                pass
+
+        # 3. Spatial enrichment for PPs with coords but no context
+        from scraper.models import SiteContext
+        enriched_pps = {sc.pp_number for sc in session.query(SiteContext.pp_number).all()}
+        need_enrich = (
+            session.query(PP)
+            .filter(PP.latitude.isnot(None), ~PP.pp_number.in_(enriched_pps))
+            .all()
+        )
+        for pp in need_enrich:
+            try:
+                enrich_pp(session, pp.pp_number, pp.latitude, pp.longitude)
+                stats["spatial_enriched"] += 1
+            except Exception:
+                pass
+
+        # 4. Generate briefs for PPs that have chunks but no brief in DB
+        stats["briefs_generated"] = _generate_missing_briefs(session)
 
     finally:
         client.close()
         session.close()
 
-    return new_pp_numbers
+    return stats
+
+
+def _process_new_pp(session, client, entry, now):
+    """Full pipeline for a new PP."""
+    from scraper.detail import fetch_and_parse_detail
+    from scraper.download import download_document
+    from scraper import repository
+    from scraper.models import PP
+    from pipeline.geocode import geocode_pp
+    from pipeline.spatial import enrich_pp
+
+    pp_number = entry.get("pp_number") or entry["slug"]
+
+    repository.upsert_pp(session, pp_number, entry.get("slug", ""), entry["detail_url"], now)
+
+    meta = fetch_and_parse_detail(client, entry["detail_url"], pp_number, DATA_DIR)
+
+    if meta["pp_number"] != pp_number:
+        repository.delete_pp(session, pp_number)
+        pp_number = meta["pp_number"]
+        repository.upsert_pp(session, pp_number, meta["slug"], meta["detail_url"], now)
+
+    stage = entry.get("stage") or meta["stage"]
+    repository.update_pp_metadata(
+        session, pp_number,
+        title=meta["title"], council=meta["council"],
+        addresses=meta["addresses"], description=meta["description"],
+        exhibition_start=meta["exhibition_start"],
+        exhibition_end=meta["exhibition_end"],
+        stage=stage,
+        relevant_planning_authority=meta["relevant_planning_authority"],
+        raw_html_path=meta.get("raw_html_path", ""),
+        scraped_at=now,
+    )
+
+    # Download docs
+    docs = meta.get("documents", [])
+    for doc in docs:
+        repository.upsert_document(session, pp_number, doc["title"], doc.get("category"), doc["url"], now)
+    for doc in docs:
+        download_document(client, pp_number, doc["url"], DATA_DIR, session)
+
+    # Geocode
+    pp = session.get(PP, pp_number)
+    if pp and not pp.latitude:
+        try:
+            result = geocode_pp(session, pp)
+            if result:
+                lat, lng, src = result
+                repository.update_pp_geocode(session, pp_number, lat, lng, src)
+        except Exception:
+            pass
+
+    # Spatial
+    pp = session.get(PP, pp_number)
+    if pp and pp.latitude and pp.longitude:
+        try:
+            enrich_pp(session, pp_number, pp.latitude, pp.longitude)
+        except Exception:
+            pass
+
+    logger.info("Worker: new PP %s processed", pp_number)
+
+
+def _check_doc_changes(session, client, pp, entry, now) -> bool:
+    """Re-fetch detail page, diff document list against DB. Returns True if changes found."""
+    from scraper.detail import fetch_and_parse_detail
+    from scraper.download import download_document
+    from scraper.models import Document
+    from scraper import repository
+
+    try:
+        meta = fetch_and_parse_detail(client, entry["detail_url"], pp.pp_number, DATA_DIR)
+    except Exception:
+        return False
+
+    portal_docs = {doc["url"] for doc in meta.get("documents", [])}
+    db_docs = {doc.url for doc in session.query(Document).filter_by(pp_number=pp.pp_number).all()}
+
+    new_urls = portal_docs - db_docs
+    removed_urls = db_docs - portal_docs
+
+    if not new_urls and not removed_urls:
+        return False
+
+    if new_urls:
+        logger.info("Worker: %s has %d new docs", pp.pp_number, len(new_urls))
+        for doc in meta.get("documents", []):
+            if doc["url"] in new_urls:
+                repository.upsert_document(session, pp.pp_number, doc["title"], doc.get("category"), doc["url"], now)
+                download_document(client, pp.pp_number, doc["url"], DATA_DIR, session)
+
+    if removed_urls:
+        logger.info("Worker: %s has %d removed docs", pp.pp_number, len(removed_urls))
+        # Mark removed docs — don't delete, just log for now
+        for url in removed_urls:
+            doc = session.query(Document).filter_by(pp_number=pp.pp_number, url=url).first()
+            if doc:
+                doc.download_status = "removed"
+                session.commit()
+
+    return True
+
+
+def _generate_missing_briefs(session) -> int:
+    """Generate/update briefs in DB for PPs with chunks.
+
+    Generates if: no brief exists.
+    Regenerates if: chunk count changed (new docs added/removed).
+    """
+    from scraper.models import Brief, Chunk
+    from sqlalchemy import func
+    from pipeline.brief import generate_brief
+
+    # PPs with chunks and their chunk counts
+    chunk_counts = dict(
+        session.query(Chunk.pp_number, func.count(Chunk.id))
+        .group_by(Chunk.pp_number)
+        .all()
+    )
+
+    # Existing briefs
+    existing_briefs = {
+        b.pp_number: b
+        for b in session.query(Brief).all()
+    }
+
+    generated = 0
+    for pp_number, chunk_count in chunk_counts.items():
+        existing = existing_briefs.get(pp_number)
+
+        # Skip if brief exists and chunk count hasn't changed
+        if existing and existing.chunk_count == chunk_count:
+            continue
+
+        action = "regenerating" if existing else "generating"
+
+        try:
+            logger.info("Worker: %s brief for %s (%d chunks)", action, pp_number, chunk_count)
+            brief_md = generate_brief(pp_number)
+            if not brief_md:
+                continue
+
+            now = datetime.now(timezone.utc)
+            doc_count = session.query(func.count()).select_from(
+                session.query(Chunk.document_id).filter_by(pp_number=pp_number).distinct().subquery()
+            ).scalar()
+
+            if existing:
+                existing.markdown = brief_md
+                existing.chunk_count = chunk_count
+                existing.doc_count = doc_count
+                existing.generated_at = now
+            else:
+                brief = Brief(
+                    pp_number=pp_number,
+                    markdown=brief_md,
+                    doc_count=doc_count,
+                    chunk_count=chunk_count,
+                    generated_at=now,
+                )
+                session.add(brief)
+
+            session.commit()
+            generated += 1
+            logger.info("Worker: brief %s for %s", action, pp_number)
+
+        except Exception:
+            session.rollback()
+            logger.exception("Worker: brief failed for %s", pp_number)
+
+        # Limit per cycle to conserve Gemini credits
+        if generated >= 5:
+            logger.info("Worker: brief limit reached (5 per cycle)")
+            break
+
+    return generated
 
 
 async def trigger_scrape() -> dict:
     """Manual trigger for demos. Returns summary."""
-    new_pps = await _scrape_and_enrich()
-    if new_pps:
+    result = await asyncio.to_thread(_run_cycle)
+
+    # Notify watchers for new PPs
+    if result.get("new_pps"):
         from workers.notify import notify_watchers_for_new_pps
-        await notify_watchers_for_new_pps(new_pps)
-    return {"new_proposals": len(new_pps), "pp_numbers": new_pps}
+        await notify_watchers_for_new_pps(result["new_pps"])
+
+    return result
