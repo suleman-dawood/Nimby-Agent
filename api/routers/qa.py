@@ -9,6 +9,8 @@ from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 
 from api.deps import get_session
+from api.middleware.auth import get_current_user, get_optional_user
+from api.middleware.tokens import TokenDeductor, require_tokens
 from api.schemas.qa import (
     AskRequest,
     AskResponse,
@@ -273,13 +275,19 @@ def suggestions(pp_number: str, session: Session = Depends(get_session)):
 # --- Agent endpoint (ADK) ---
 
 @router.post("/agent/stream")
-async def agent_stream(req: AskRequest):
-    """Stream agent response with tool-use indicators. Requires auth + tokens in future."""
-    import asyncio
+async def agent_stream(
+    req: AskRequest,
+    deduct: TokenDeductor = Depends(require_tokens(1)),
+):
+    """Stream agent response with tool-use indicators. Costs 1 token."""
     from agents.streaming import stream_agent_response
+    from scraper.models import User
+
+    user = deduct.user
 
     async def generate():
-        async for chunk in stream_agent_response(req.pp_number, req.question, "anonymous"):
+        async for chunk in stream_agent_response(req.pp_number, req.question, str(user.id)):
             yield chunk
+        deduct(action="agent_chat", pp_number=req.pp_number)
 
     return StreamingResponse(generate(), media_type="text/event-stream")

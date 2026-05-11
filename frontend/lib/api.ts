@@ -2,6 +2,18 @@ import { getAuthHeaders } from "./auth";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
+function showError(message: string) {
+  // Dynamic import to avoid SSR issues
+  import("@mantine/notifications").then(({ notifications }) => {
+    notifications.show({
+      title: "Error",
+      message,
+      color: "red",
+      autoClose: 5000,
+    });
+  }).catch(() => {});
+}
+
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`, {
     headers: { "Content-Type": "application/json", ...getAuthHeaders(), ...options?.headers },
@@ -9,7 +21,15 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
   });
   if (!res.ok) {
     const detail = await res.json().catch(() => ({}));
-    throw new Error(detail.detail || `API error: ${res.status}`);
+    const message = detail.detail || `API error: ${res.status}`;
+    if (res.status === 402) {
+      showError("Insufficient tokens. Sign in to get more.");
+    } else if (res.status === 401) {
+      showError("Please sign in to use this feature.");
+    } else {
+      showError(message);
+    }
+    throw new Error(message);
   }
   return res.json();
 }

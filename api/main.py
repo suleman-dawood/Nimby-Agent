@@ -3,10 +3,11 @@
 import asyncio
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from api.deps import configure_api_keys
+from api.middleware.auth import get_current_user
 from api.routers import auth, briefs, qa, search, site_context, submissions, subscriptions, tokens, watchers
 
 
@@ -59,7 +60,6 @@ app.include_router(submissions.router)
 app.include_router(tokens.router)
 app.include_router(site_context.router)
 app.include_router(watchers.router)
-app.include_router(subscriptions.router)
 
 
 @app.get("/api/health")
@@ -68,8 +68,8 @@ def health():
 
 
 @app.post("/api/admin/trigger-scrape")
-async def trigger_scrape():
-    """Manual trigger for scrape + notify cycle. For demos."""
+async def trigger_scrape(user=Depends(get_current_user)):
+    """Manual trigger for scrape + notify cycle. Requires auth."""
     from workers.scheduler import trigger_scrape
     return await trigger_scrape()
 
@@ -77,7 +77,7 @@ async def trigger_scrape():
 _batch_task = None
 
 @app.post("/api/admin/batch-process")
-async def batch_process(stages: str = "all", batch_size: int = 5):
+async def batch_process(stages: str = "all", batch_size: int = 5, user=Depends(get_current_user)):
     """Run full batch pipeline (scrape → extract → embed → cleanup) on Railway.
 
     Runs as background task — returns immediately. Check /api/admin/batch-status for progress.
@@ -115,7 +115,7 @@ async def batch_status():
 _briefs_task = None
 
 @app.post("/api/admin/generate-briefs")
-async def generate_briefs_endpoint():
+async def generate_briefs_endpoint(user=Depends(get_current_user)):
     """Generate all missing briefs. Runs on Railway, returns immediately."""
     global _briefs_task
 

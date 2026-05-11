@@ -1,9 +1,11 @@
 "use client";
 
 import { MantineProvider } from "@mantine/core";
+import { Notifications } from "@mantine/notifications";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { GoogleOAuthProvider } from "@react-oauth/google";
 import { useState } from "react";
+import "@mantine/notifications/styles.css";
 
 const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || "";
 
@@ -23,7 +25,10 @@ export default function Providers({ children }: { children: React.ReactNode }) {
   return (
     <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
       <QueryClientProvider client={queryClient}>
-        <MantineProvider>{children}</MantineProvider>
+        <MantineProvider>
+          <Notifications position="top-right" autoClose={5000} />
+          {children}
+        </MantineProvider>
       </QueryClientProvider>
     </GoogleOAuthProvider>
   );

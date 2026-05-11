@@ -18,10 +18,12 @@ import {
   getTokenBalance,
   getTokenHistory,
   getSubscriptions,
+  getInAppNotifications,
   unsubscribe,
   type WatcherResponse,
   type NotificationResponse,
   type SubscriptionResponse,
+  type InAppNotificationResponse,
   getWatcherNotifications,
 } from "@/lib/api";
 import WatchForm from "@/components/dashboard/WatchForm";
@@ -34,6 +36,7 @@ export default function DashboardPage() {
   const [watchers, setWatchers] = useState<WatcherResponse[]>([]);
   const [subscriptions, setSubscriptions] = useState<SubscriptionResponse[]>([]);
   const [notifications, setNotifications] = useState<NotificationResponse[]>([]);
+  const [inAppNotifs, setInAppNotifs] = useState<InAppNotificationResponse[]>([]);
   const [tokenBalance, setTokenBalance] = useState<{ tokens_remaining: number; tokens_used: number } | null>(null);
 
   useEffect(() => {
@@ -46,12 +49,15 @@ export default function DashboardPage() {
 
   const loadData = useCallback(async () => {
     try {
-      const [w, tb, subs] = await Promise.all([getWatchers(), getTokenBalance(), getSubscriptions()]);
+      const [w, tb, subs, appNotifs] = await Promise.all([
+        getWatchers(), getTokenBalance(), getSubscriptions(), getInAppNotifications(),
+      ]);
       setWatchers(w);
       setTokenBalance(tb);
       setSubscriptions(subs);
+      setInAppNotifs(appNotifs);
 
-      // Load notifications for all watchers
+      // Load watcher notifications
       const allNotifs: NotificationResponse[] = [];
       for (const watcher of w) {
         try {
@@ -213,7 +219,7 @@ export default function DashboardPage() {
           )}
         </Card>
 
-        {/* Notifications */}
+        {/* In-App Notifications (from subscriptions) */}
         <Card withBorder padding="md">
           <Text
             style={{
@@ -225,10 +231,64 @@ export default function DashboardPage() {
               marginBottom: 12,
             }}
           >
-            Recent Notifications
+            Subscription Notifications ({inAppNotifs.length})
           </Text>
-          <NotificationList notifications={notifications} />
+          {inAppNotifs.length === 0 ? (
+            <Text style={{ fontSize: 13, color: "var(--nsw-grey-04)" }}>
+              No notifications yet. Subscribe to proposals to get notified about changes, new documents, and expiry warnings.
+            </Text>
+          ) : (
+            <Stack gap="sm">
+              {inAppNotifs.map((n) => (
+                <Card
+                  key={n.id}
+                  withBorder
+                  padding="sm"
+                  style={{ cursor: "pointer", opacity: n.read ? 0.6 : 1 }}
+                  onClick={() => router.push(`/brief/${n.pp_number}`)}
+                >
+                  <Group justify="space-between">
+                    <div>
+                      <Group gap={6}>
+                        <Badge size="xs" variant="filled" color={
+                          n.event_type === "new_docs" ? "blue" :
+                          n.event_type === "stage_change" ? "violet" :
+                          n.event_type === "expiry_warning" ? "orange" : "green"
+                        }>
+                          {n.event_type.replace("_", " ")}
+                        </Badge>
+                        <Text style={{ fontSize: 11, color: "var(--nsw-grey-04)" }}>
+                          {new Date(n.created_at).toLocaleDateString()}
+                        </Text>
+                      </Group>
+                      <Text size="sm" fw={n.read ? 400 : 600} mt={4}>{n.title}</Text>
+                      <Text size="xs" c="dimmed" lineClamp={1}>{n.message}</Text>
+                    </div>
+                  </Group>
+                </Card>
+              ))}
+            </Stack>
+          )}
         </Card>
+
+        {/* Watcher Notifications */}
+        {notifications.length > 0 && (
+          <Card withBorder padding="md">
+            <Text
+              style={{
+                fontFamily: "'Public Sans', sans-serif",
+                fontSize: 11,
+                textTransform: "uppercase",
+                letterSpacing: "0.08em",
+                color: "var(--nsw-grey-04)",
+                marginBottom: 12,
+              }}
+            >
+              Watcher Notifications ({notifications.length})
+            </Text>
+            <NotificationList notifications={notifications} />
+          </Card>
+        )}
       </Stack>
     </Container>
   );

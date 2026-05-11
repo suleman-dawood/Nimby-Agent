@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 
+from api.middleware.auth import get_optional_user
+from api.middleware.tokens import TokenDeductor, require_tokens
 from api.schemas.submissions import (
     ConcernsResponse,
     DroppedConcern,
@@ -23,7 +25,7 @@ def list_concerns():
 
 
 @router.post("/generate", response_model=SubmissionResponse)
-def generate(req: SubmissionRequest):
+def generate(req: SubmissionRequest, deduct: TokenDeductor = Depends(require_tokens(3))):
     result = generate_submission(
         pp_number=req.pp_number,
         concerns=req.concerns,
@@ -44,6 +46,8 @@ def generate(req: SubmissionRequest):
             unique_citations.append(
                 SubmissionCitation(document_title=c["document_title"], page=c["page"])
             )
+
+    deduct(action="submission", pp_number=req.pp_number)
 
     return SubmissionResponse(
         markdown=result.markdown,
