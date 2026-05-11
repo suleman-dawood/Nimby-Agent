@@ -1,25 +1,31 @@
-"use client";
-
-import { Container, Title, Text, Button, Stack } from "@mantine/core";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 export default function NotFound() {
-  const router = useRouter();
-
   return (
-    <Container size="sm" py="xl">
-      <Stack align="center" gap="md" py={60}>
-        <Text style={{ fontSize: 64, fontWeight: 700, color: "var(--nsw-grey-03)" }}>
-          404
-        </Text>
-        <Title order={2}>Page not found</Title>
-        <Text style={{ color: "var(--nsw-text-light)", textAlign: "center" }}>
-          The page you are looking for does not exist or the proposal has not been loaded yet.
-        </Text>
-        <Button onClick={() => router.push("/")} variant="filled">
-          Back to search
-        </Button>
-      </Stack>
-    </Container>
+    <div style={{
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      justifyContent: "center",
+      minHeight: "60vh",
+      fontFamily: "'Public Sans', Arial, sans-serif",
+      padding: 24,
+    }}>
+      <p style={{ fontSize: 64, fontWeight: 700, color: "#CDD3D6", margin: 0 }}>404</p>
+      <h2 style={{ color: "#002664", marginTop: 8 }}>Page not found</h2>
+      <p style={{ color: "#495054", textAlign: "center", maxWidth: 400 }}>
+        The page you are looking for does not exist or the proposal has not been loaded yet.
+      </p>
+      <Link href="/" style={{
+        marginTop: 16,
+        background: "#002664",
+        color: "white",
+        padding: "10px 24px",
+        textDecoration: "none",
+        fontWeight: 600,
+      }}>
+        Back to search
+      </Link>
+    </div>
   );
 }
