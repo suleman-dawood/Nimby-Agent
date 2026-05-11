@@ -44,28 +44,42 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  const handleLogin = useCallback(() => {
-    import("@react-oauth/google").then(({ useGoogleLogin }) => {
-      // Can't use hook dynamically — use tokenClient directly
-    }).catch(() => {});
-    // Use google.accounts.oauth2 directly
-    if (typeof window !== "undefined" && (window as any).google?.accounts?.oauth2) {
-      const client = (window as any).google.accounts.oauth2.initTokenClient({
-        client_id: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || "",
-        scope: "openid email profile",
-        callback: async (response: any) => {
-          if (response.access_token) {
-            try {
-              const authRes = await exchangeGoogleToken(response.access_token);
-              setUser(authRes.user);
-            } catch (err) {
-              console.error("Auth failed:", err);
-            }
-          }
-        },
+  const handleLogin = useCallback(async () => {
+    const g = (window as any).google;
+    if (!g?.accounts?.oauth2) {
+      // Script not loaded yet — try loading it
+      await new Promise<void>((resolve) => {
+        const script = document.createElement("script");
+        script.src = "https://accounts.google.com/gsi/client";
+        script.onload = () => resolve();
+        script.onerror = () => resolve();
+        document.head.appendChild(script);
       });
-      client.requestAccessToken();
+      // Wait a tick for google to init
+      await new Promise((r) => setTimeout(r, 500));
     }
+
+    const google = (window as any).google;
+    if (!google?.accounts?.oauth2) {
+      console.error("Google OAuth not available");
+      return;
+    }
+
+    const client = google.accounts.oauth2.initTokenClient({
+      client_id: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || "",
+      scope: "openid email profile",
+      callback: async (response: any) => {
+        if (response.access_token) {
+          try {
+            const authRes = await exchangeGoogleToken(response.access_token);
+            setUser(authRes.user);
+          } catch (err) {
+            console.error("Auth failed:", err);
+          }
+        }
+      },
+    });
+    client.requestAccessToken();
   }, []);
 
   const handleSignOut = useCallback(() => {

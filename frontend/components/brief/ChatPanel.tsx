@@ -171,11 +171,19 @@ export default function ChatPanel({
 
   // Start loading impact immediately on mount (even when collapsed)
   useEffect(() => {
-    if (impactFired.current || !address) return;
+    if (impactFired.current) return;
     impactFired.current = true;
-    startStream((cb) =>
-      streamImpactFast(ppNumber, address, distanceKm, cb)
-    );
+    if (address) {
+      startStream((cb) =>
+        streamImpactFast(ppNumber, address, distanceKm, cb)
+      );
+    } else {
+      // No address — show welcome message
+      setMessages([{
+        role: "assistant",
+        content: "Ask me anything about this planning proposal. I can search the proposal documents, check planning controls, and analyse compliance with the LEP.",
+      }]);
+    }
   }, [address, ppNumber, distanceKm, startStream]);
 
   const handleSend = (q?: string) => {

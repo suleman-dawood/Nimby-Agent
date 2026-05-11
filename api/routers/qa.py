@@ -171,7 +171,7 @@ def ask_stream(req: AskRequest):
 def _stream_impact_fast(pp_number: str, address: str, distance_km: float):
     """Stream a fast impact response using the pre-generated brief (no RAG pipeline)."""
     import os
-    from scraper.models import PP, create_db_engine, create_session
+    from scraper.models import PP, Brief, create_db_engine, create_session
     from pipeline.llm_utils import (
         load_prompt, stream_llm, normalize_citations, extract_citations,
     )
@@ -185,17 +185,21 @@ def _stream_impact_fast(pp_number: str, address: str, distance_km: float):
             yield f"data: {json.dumps({'type': 'error', 'content': 'Proposal not found'})}\n\n"
             return
 
-        briefs_dir = os.path.join(
-            os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
-            "data", "briefs",
-        )
-        brief_path = os.path.join(briefs_dir, f"{pp_number}.md")
-        if not os.path.exists(brief_path):
-            yield f"data: {json.dumps({'type': 'error', 'content': 'Brief not available yet.'})}\n\n"
-            return
-
-        with open(brief_path) as f:
-            brief_md = f.read()
+        # Try DB first, fall back to file
+        brief_row = session.query(Brief).filter_by(pp_number=pp_number).first()
+        if brief_row:
+            brief_md = brief_row.markdown
+        else:
+            briefs_dir = os.path.join(
+                os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
+                "data", "briefs",
+            )
+            brief_path = os.path.join(briefs_dir, f"{pp_number}.md")
+            if not os.path.exists(brief_path):
+                yield f"data: {json.dumps({'type': 'error', 'content': 'Brief not available yet.'})}\n\n"
+                return
+            with open(brief_path) as f:
+                brief_md = f.read()
 
         system = load_prompt("impact_fast_system")
         prompt = load_prompt("impact_fast_user").format(
