@@ -396,6 +396,13 @@ def _send_subscription_email(to_email: str, pp_number: str, title: str, message:
                 <p><a href="https://api-service-production-6a0d.up.railway.app/brief/{pp_number}"
                    style="background: #002664; color: white; padding: 10px 20px; text-decoration: none;">
                    View Proposal</a></p>
+                <p style="margin-top: 24px; font-size: 12px; color: #999;">
+                    <a href="https://api-service-production-6a0d.up.railway.app/api/subscriptions/unsubscribe-email?email={to_email}&pp={pp_number}"
+                       style="color: #999;">Unsubscribe from this proposal</a>
+                    &nbsp;|&nbsp;
+                    <a href="https://api-service-production-6a0d.up.railway.app/api/subscriptions/unsubscribe-all?email={to_email}"
+                       style="color: #999;">Unsubscribe from all</a>
+                </p>
             </div>""",
         },
         timeout=10.0,

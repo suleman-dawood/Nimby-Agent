@@ -17,8 +17,11 @@ import {
   getWatchers,
   getTokenBalance,
   getTokenHistory,
+  getSubscriptions,
+  unsubscribe,
   type WatcherResponse,
   type NotificationResponse,
+  type SubscriptionResponse,
   getWatcherNotifications,
 } from "@/lib/api";
 import WatchForm from "@/components/dashboard/WatchForm";
@@ -29,6 +32,7 @@ export default function DashboardPage() {
   const router = useRouter();
   const [user, setUser] = useState<AuthUser | null>(null);
   const [watchers, setWatchers] = useState<WatcherResponse[]>([]);
+  const [subscriptions, setSubscriptions] = useState<SubscriptionResponse[]>([]);
   const [notifications, setNotifications] = useState<NotificationResponse[]>([]);
   const [tokenBalance, setTokenBalance] = useState<{ tokens_remaining: number; tokens_used: number } | null>(null);
 
@@ -42,9 +46,10 @@ export default function DashboardPage() {
 
   const loadData = useCallback(async () => {
     try {
-      const [w, tb] = await Promise.all([getWatchers(), getTokenBalance()]);
+      const [w, tb, subs] = await Promise.all([getWatchers(), getTokenBalance(), getSubscriptions()]);
       setWatchers(w);
       setTokenBalance(tb);
+      setSubscriptions(subs);
 
       // Load notifications for all watchers
       const allNotifs: NotificationResponse[] = [];
@@ -150,6 +155,62 @@ export default function DashboardPage() {
             Watched Addresses ({watchers.length})
           </Text>
           <WatchedAddresses watchers={watchers} onDeleted={loadData} />
+        </Card>
+
+        {/* Proposal Subscriptions */}
+        <Card withBorder padding="md">
+          <Text
+            style={{
+              fontFamily: "'Public Sans', sans-serif",
+              fontSize: 11,
+              textTransform: "uppercase",
+              letterSpacing: "0.08em",
+              color: "var(--nsw-grey-04)",
+              marginBottom: 12,
+            }}
+          >
+            Proposal Subscriptions ({subscriptions.length})
+          </Text>
+          {subscriptions.length === 0 ? (
+            <Text style={{ fontSize: 13, color: "var(--nsw-grey-04)" }}>
+              No subscriptions yet. Visit a proposal and click "Subscribe to updates" to get notified about changes.
+            </Text>
+          ) : (
+            <Stack gap="sm">
+              {subscriptions.map((sub) => (
+                <Card key={sub.id} withBorder padding="sm">
+                  <Group justify="space-between">
+                    <div>
+                      <Text
+                        style={{ fontSize: 14, fontWeight: 600, cursor: "pointer", color: "var(--nsw-brand-dark)" }}
+                        onClick={() => router.push(`/brief/${sub.pp_number}`)}
+                      >
+                        {sub.pp_number}
+                      </Text>
+                      <Group gap={6} mt={4}>
+                        {sub.notify_docs && <Badge size="xs" variant="light" color="blue">Docs</Badge>}
+                        {sub.notify_stage && <Badge size="xs" variant="light" color="violet">Stage</Badge>}
+                        {sub.notify_expiry && <Badge size="xs" variant="light" color="orange">Expiry</Badge>}
+                      </Group>
+                    </div>
+                    <Text
+                      size="xs"
+                      c="red"
+                      style={{ cursor: "pointer" }}
+                      onClick={async () => {
+                        try {
+                          await unsubscribe(sub.pp_number);
+                          loadData();
+                        } catch {}
+                      }}
+                    >
+                      Unsubscribe
+                    </Text>
+                  </Group>
+                </Card>
+              ))}
+            </Stack>
+          )}
         </Card>
 
         {/* Notifications */}

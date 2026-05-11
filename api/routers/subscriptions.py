@@ -159,3 +159,42 @@ def _notif_response(n: InAppNotification) -> InAppNotificationResponse:
         title=n.title, message=n.message, read=n.read,
         created_at=n.created_at,
     )
+
+
+# --- Email unsubscribe (no auth needed — uses email param) ---
+
+@router.get("/unsubscribe-email")
+def unsubscribe_via_email(
+    email: str,
+    pp: str,
+    session: Session = Depends(get_session),
+):
+    """One-click unsubscribe from email link. No auth required."""
+    from scraper.models import User
+    user = session.query(User).filter_by(email=email).first()
+    if not user:
+        return {"status": "not_found", "message": "Email not found"}
+    sub = (
+        session.query(Subscription)
+        .filter_by(user_id=user.id, pp_number=pp)
+        .first()
+    )
+    if sub:
+        sub.active = False
+        session.commit()
+    return {"status": "unsubscribed", "message": f"Unsubscribed from {pp}. You will no longer receive email notifications for this proposal."}
+
+
+@router.get("/unsubscribe-all")
+def unsubscribe_all_via_email(
+    email: str,
+    session: Session = Depends(get_session),
+):
+    """Unsubscribe from all proposals via email link. No auth required."""
+    from scraper.models import User
+    user = session.query(User).filter_by(email=email).first()
+    if not user:
+        return {"status": "not_found", "message": "Email not found"}
+    session.query(Subscription).filter_by(user_id=user.id, active=True).update({"active": False})
+    session.commit()
+    return {"status": "unsubscribed_all", "message": "Unsubscribed from all proposal notifications."}
