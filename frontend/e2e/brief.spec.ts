@@ -48,4 +48,12 @@ test.describe("Brief Page", () => {
     await expect(page.getByRole("heading", { name: testPP })).toBeVisible({ timeout: 20000 });
     await expect(page.getByText("Draft a submission")).toBeVisible();
   });
+
+  test("subscribe button visible when not signed in shows nothing", async ({ page }) => {
+    await page.goto(`/brief/${testPP}`);
+    await expect(page.getByRole("heading", { name: testPP })).toBeVisible({ timeout: 20000 });
+    // Subscribe button only visible when authenticated
+    const subButton = page.getByText("Subscribe to updates");
+    await expect(subButton).toHaveCount(0);
+  });
 });
