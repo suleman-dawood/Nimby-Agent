@@ -23,16 +23,40 @@ def get_brief(pp_number: str, session: Session = Depends(get_session)):
     if not pp:
         raise HTTPException(status_code=404, detail=f"PP {pp_number} not found")
 
-    # Try DB first, fall back to file
+    # Try DB first, fall back to file, then generate a metadata-only brief
     brief = session.query(Brief).filter_by(pp_number=pp_number).first()
     if brief:
         markdown = brief.markdown
     else:
         brief_path = os.path.join(BRIEFS_DIR, f"{pp_number}.md")
-        if not os.path.exists(brief_path):
-            raise HTTPException(status_code=404, detail=f"Brief for {pp_number} not generated yet")
-        with open(brief_path) as f:
-            markdown = f.read()
+        if os.path.exists(brief_path):
+            with open(brief_path) as f:
+                markdown = f.read()
+        else:
+            # No brief available — generate a metadata summary
+            from scraper.models import Chunk, SiteContext
+            chunk_count = session.query(Chunk).filter_by(pp_number=pp_number).count()
+            site_ctx = session.query(SiteContext).filter_by(pp_number=pp_number).first()
+
+            parts = [f"# {pp.title or pp_number}\n"]
+            if pp.description:
+                parts.append(f"{pp.description[:500]}\n")
+            parts.append(f"**Stage:** {pp.stage or 'Unknown'}")
+            parts.append(f"**Council:** {pp.council or 'Unknown'}")
+            if pp.exhibition_end:
+                parts.append(f"**Exhibition closes:** {pp.exhibition_end}")
+            if site_ctx:
+                parts.append(f"\n## Site Context\n- **Zoning:** {site_ctx.zoning or 'N/A'}")
+                if site_ctx.max_height_m:
+                    parts.append(f"- **Max Height:** {site_ctx.max_height_m}m")
+                if site_ctx.bushfire_prone:
+                    parts.append("- **Bushfire Prone**")
+                if site_ctx.flood_planning:
+                    parts.append("- **Flood Planning Area**")
+            if chunk_count == 0:
+                parts.append("\n*No public documents are available for this proposal yet. "
+                             "Use the chat to ask questions based on the metadata and site context available.*")
+            markdown = "\n".join(parts)
 
     return BriefResponse(
         pp_number=pp_number,

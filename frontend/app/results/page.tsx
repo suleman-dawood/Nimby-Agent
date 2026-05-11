@@ -7,6 +7,8 @@ import {
   Stack,
   Grid,
   Alert,
+  Chip,
+  Group,
 } from "@mantine/core";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -14,6 +16,15 @@ import MapProvider from "@/components/map/MapProvider";
 import ProposalMap from "@/components/map/ProposalMap";
 import PPCard from "@/components/proposals/PPCard";
 import type { NearbyPP, NearbyResponse } from "@/lib/api";
+
+const STAGE_COLORS: Record<string, string> = {
+  "Under Exhibition": "green",
+  "Under Assessment": "orange",
+  "Post-Exhibition": "blue",
+  "Pre-Gateway": "gray",
+  "Exhibition Closed": "red",
+  "Finalised": "violet",
+};
 
 interface SearchData extends NearbyResponse {
   lat: number;
@@ -24,11 +35,20 @@ interface SearchData extends NearbyResponse {
 export default function ResultsPage() {
   const router = useRouter();
   const [data, setData] = useState<SearchData | null>(null);
+  const [activeStages, setActiveStages] = useState<string[]>([]);
 
   useEffect(() => {
     const stored = sessionStorage.getItem("nimby_search");
     if (stored) {
-      setData(JSON.parse(stored));
+      const parsed = JSON.parse(stored);
+      setData(parsed);
+      // Default: all stages active
+      const allStages = [...new Set(
+        [...(parsed.results || []), ...(parsed.policy_results || [])]
+          .map((pp: NearbyPP) => pp.stage)
+          .filter(Boolean)
+      )] as string[];
+      setActiveStages(allStages);
     }
   }, []);
 
@@ -43,6 +63,17 @@ export default function ResultsPage() {
   }
 
   const allPPs = [...data.results, ...data.policy_results];
+  const allStages = [...new Set(allPPs.map((pp) => pp.stage).filter(Boolean))] as string[];
+
+  const filteredResults = data.results.filter((pp) => !pp.stage || activeStages.includes(pp.stage));
+  const filteredPolicy = data.policy_results.filter((pp) => !pp.stage || activeStages.includes(pp.stage));
+  const filteredAll = [...filteredResults, ...filteredPolicy];
+
+  const toggleStage = (stage: string) => {
+    setActiveStages((prev) =>
+      prev.includes(stage) ? prev.filter((s) => s !== stage) : [...prev, stage]
+    );
+  };
 
   const handlePPClick = (pp: NearbyPP) => {
     router.push(`/brief/${pp.pp_number}`);
@@ -76,7 +107,7 @@ export default function ResultsPage() {
             }}
           />
           <Text style={{ fontSize: 13, color: "var(--nsw-text-light)" }}>
-            {data.results.length} proposal{data.results.length !== 1 && "s"}{" "}
+            {filteredAll.length} proposal{filteredAll.length !== 1 && "s"}{" "}
             within range
             {data.lga && (
               <span>
@@ -88,15 +119,32 @@ export default function ResultsPage() {
           </Text>
         </div>
 
+        {/* Stage Filters */}
+        {allStages.length > 1 && (
+          <Group gap={6} wrap="wrap">
+            {allStages.map((stage) => (
+              <Chip
+                key={stage}
+                checked={activeStages.includes(stage)}
+                onChange={() => toggleStage(stage)}
+                color={STAGE_COLORS[stage] || "gray"}
+                size="xs"
+              >
+                {stage}
+              </Chip>
+            ))}
+          </Group>
+        )}
+
         <MapProvider>
           <ProposalMap
             center={{ lat: data.lat, lng: data.lng }}
-            markers={allPPs}
+            markers={filteredAll}
             onMarkerClick={handlePPClick}
           />
         </MapProvider>
 
-        {data.results.length > 0 && (
+        {filteredResults.length > 0 && (
           <>
             <Text
               style={{
@@ -112,7 +160,7 @@ export default function ResultsPage() {
               Nearby Proposals
             </Text>
             <Grid>
-              {data.results.map((pp) => (
+              {filteredResults.map((pp) => (
                 <Grid.Col key={pp.pp_number} span={{ base: 12, sm: 6, md: 4 }}>
                   <PPCard pp={pp} onClick={() => handlePPClick(pp)} />
                 </Grid.Col>
@@ -121,7 +169,7 @@ export default function ResultsPage() {
           </>
         )}
 
-        {data.policy_results.length > 0 && (
+        {filteredPolicy.length > 0 && (
           <>
             <Text
               style={{
@@ -138,7 +186,7 @@ export default function ResultsPage() {
               LGA-Wide Policy Proposals
             </Text>
             <Grid>
-              {data.policy_results.map((pp) => (
+              {filteredPolicy.map((pp) => (
                 <Grid.Col key={pp.pp_number} span={{ base: 12, sm: 6, md: 4 }}>
                   <PPCard pp={pp} onClick={() => handlePPClick(pp)} />
                 </Grid.Col>
@@ -147,9 +195,9 @@ export default function ResultsPage() {
           </>
         )}
 
-        {allPPs.length === 0 && (
+        {filteredAll.length === 0 && (
           <Alert color="blue" title="No proposals found">
-            No planning proposals are currently on exhibition near your address.
+            No planning proposals match your filters near this address.
           </Alert>
         )}
       </Stack>

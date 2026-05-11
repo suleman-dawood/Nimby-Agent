@@ -21,6 +21,15 @@ const MAP_VISUAL_STYLES = [
   { featureType: "poi", elementType: "labels", stylers: [{ visibility: "off" }] },
 ];
 
+const STAGE_COLORS: Record<string, string> = {
+  "Under Exhibition": "#008A07",
+  "Under Assessment": "#C95000",
+  "Post-Exhibition": "#146CFD",
+  "Pre-Gateway": "#A0A5AE",
+  "Exhibition Closed": "#D7153A",
+  "Finalised": "#6B21A8",
+};
+
 const DEFAULT_CENTER = { lat: -33.87, lng: 151.21 };
 
 interface Props {
@@ -58,14 +67,15 @@ export default function ProposalMap({
     };
   }, []);
 
-  const ppIcon = useMemo(() => {
+  const getStageIcon = useCallback((stage: string | null) => {
     if (typeof window === "undefined" || !window.google) return undefined;
+    const color = STAGE_COLORS[stage || ""] || "#002664";
     return {
       path: google.maps.SymbolPath.BACKWARD_CLOSED_ARROW,
-      scale: 5,
-      fillColor: "#002664",
+      scale: 6,
+      fillColor: color,
       fillOpacity: 0.9,
-      strokeColor: "#002664",
+      strokeColor: "#ffffff",
       strokeWeight: 1,
     };
   }, []);
@@ -115,7 +125,7 @@ export default function ProposalMap({
             <Marker
               key={pp.pp_number}
               position={{ lat: pp.latitude, lng: pp.longitude }}
-              icon={ppIcon}
+              icon={getStageIcon(pp.stage)}
               onClick={() => {
                 setSelected(pp);
                 onMarkerClick?.(pp);
@@ -148,6 +158,18 @@ export default function ProposalMap({
             >
               {selected.pp_number}
             </div>
+            {selected.stage && (
+              <div
+                style={{
+                  fontSize: 10,
+                  color: STAGE_COLORS[selected.stage] || "#666",
+                  fontWeight: 600,
+                  marginBottom: 4,
+                }}
+              >
+                {selected.stage}
+              </div>
+            )}
             {selected.title && (
               <div style={{ fontSize: 13, lineHeight: 1.4, marginBottom: 4 }}>
                 {selected.title.slice(0, 100)}
