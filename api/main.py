@@ -109,3 +109,88 @@ async def batch_status():
             return {"status": "failed", "error": str(exc)}
         return {"status": "completed"}
     return {"status": "running"}
+
+
+_briefs_task = None
+
+@app.post("/api/admin/generate-briefs")
+async def generate_briefs_endpoint():
+    """Generate all missing briefs. Runs on Railway, returns immediately."""
+    global _briefs_task
+
+    if _briefs_task and not _briefs_task.done():
+        return {"status": "already_running"}
+
+    async def _run():
+        await asyncio.to_thread(_generate_all_briefs)
+
+    _briefs_task = asyncio.create_task(_run())
+    return {"status": "started"}
+
+
+@app.get("/api/admin/briefs-status")
+async def briefs_status():
+    """Check brief generation status."""
+    global _briefs_task
+    from scraper.models import Brief, Chunk, create_db_engine, create_session
+    engine = create_db_engine()
+    session = create_session(engine)
+    try:
+        total_needed = session.query(Chunk.pp_number).distinct().count()
+        done = session.query(Brief).count()
+    finally:
+        session.close()
+
+    status = "never_started"
+    if _briefs_task is not None:
+        if _briefs_task.done():
+            exc = _briefs_task.exception()
+            status = "failed" if exc else "completed"
+        else:
+            status = "running"
+
+    return {"status": status, "briefs_done": done, "briefs_needed": total_needed}
+
+
+def _generate_all_briefs():
+    """Generate all missing briefs. Runs in thread."""
+    from scraper.models import Brief, Chunk, create_db_engine, create_session
+    from pipeline.brief import generate_brief
+    from sqlalchemy import func
+    from datetime import datetime, timezone
+    import logging
+
+    logger = logging.getLogger(__name__)
+    engine = create_db_engine()
+    session = create_session(engine)
+
+    try:
+        pps = [r[0] for r in session.query(Chunk.pp_number).distinct().all()]
+        existing = {b.pp_number for b in session.query(Brief).all()}
+        todo = [pp for pp in pps if pp not in existing]
+        logger.info("Generating %d briefs", len(todo))
+
+        done = 0
+        for pp_number in todo:
+            try:
+                md = generate_brief(pp_number)
+                if not md:
+                    continue
+                chunk_count = session.query(func.count(Chunk.id)).filter_by(pp_number=pp_number).scalar()
+                doc_count = session.query(func.count(func.distinct(Chunk.document_id))).filter_by(pp_number=pp_number).scalar()
+                brief = Brief(
+                    pp_number=pp_number, markdown=md,
+                    doc_count=doc_count, chunk_count=chunk_count,
+                    generated_at=datetime.now(timezone.utc),
+                )
+                session.add(brief)
+                session.commit()
+                done += 1
+                logger.info("Brief %d/%d: %s", done, len(todo), pp_number)
+            except Exception as e:
+                session.rollback()
+                logger.warning("Brief failed %s: %s", pp_number, str(e)[:80])
+
+        logger.info("Brief generation complete: %d/%d", done, len(todo))
+    finally:
+        session.close()
