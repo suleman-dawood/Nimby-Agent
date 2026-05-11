@@ -9,6 +9,17 @@ import "@mantine/notifications/styles.css";
 
 const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || "";
 
+function GoogleAuthWrapper({ children }: { children: React.ReactNode }) {
+  if (!GOOGLE_CLIENT_ID) {
+    return <>{children}</>;
+  }
+  return (
+    <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
+      {children}
+    </GoogleOAuthProvider>
+  );
+}
+
 export default function Providers({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(
     () =>
@@ -23,13 +34,13 @@ export default function Providers({ children }: { children: React.ReactNode }) {
   );
 
   return (
-    <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
+    <GoogleAuthWrapper>
       <QueryClientProvider client={queryClient}>
         <MantineProvider>
           <Notifications position="top-right" autoClose={5000} />
           {children}
         </MantineProvider>
       </QueryClientProvider>
-    </GoogleOAuthProvider>
+    </GoogleAuthWrapper>
   );
 }
