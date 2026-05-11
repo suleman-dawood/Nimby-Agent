@@ -280,3 +280,56 @@ export function getTokenBalance() {
 export function getTokenHistory() {
   return request<{ usage: { id: number; action: string; tokens_spent: number; pp_number: string | null; created_at: string }[] }>("/api/tokens/history");
 }
+
+// --- Subscriptions ---
+
+export interface SubscriptionResponse {
+  id: number;
+  pp_number: string;
+  notify_docs: boolean;
+  notify_stage: boolean;
+  notify_expiry: boolean;
+  active: boolean;
+  created_at: string;
+}
+
+export interface InAppNotificationResponse {
+  id: number;
+  pp_number: string;
+  event_type: string;
+  title: string;
+  message: string;
+  read: boolean;
+  created_at: string;
+}
+
+export function subscribe(ppNumber: string, opts?: { notify_docs?: boolean; notify_stage?: boolean; notify_expiry?: boolean }) {
+  return request<SubscriptionResponse>("/api/subscriptions", {
+    method: "POST",
+    body: JSON.stringify({ pp_number: ppNumber, ...opts }),
+  });
+}
+
+export function getSubscriptions() {
+  return request<SubscriptionResponse[]>("/api/subscriptions");
+}
+
+export function unsubscribe(ppNumber: string) {
+  return request<{ status: string }>(`/api/subscriptions/${ppNumber}`, { method: "DELETE" });
+}
+
+export function getInAppNotifications() {
+  return request<InAppNotificationResponse[]>("/api/subscriptions/notifications");
+}
+
+export function getUnreadCount() {
+  return request<{ count: number }>("/api/subscriptions/notifications/unread");
+}
+
+export function markNotificationRead(id: number) {
+  return request<{ status: string }>(`/api/subscriptions/notifications/${id}/read`, { method: "POST" });
+}
+
+export function markAllNotificationsRead() {
+  return request<{ status: string }>("/api/subscriptions/notifications/read-all", { method: "POST" });
+}

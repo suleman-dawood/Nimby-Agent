@@ -92,15 +92,24 @@ def _run_cycle() -> dict:
                     # Stage transition
                     new_stage = entry.get("stage")
                     if new_stage and pp.stage != new_stage:
-                        logger.info("Stage: %s %s → %s", pp_number, pp.stage, new_stage)
+                        old_stage = pp.stage
+                        logger.info("Stage: %s %s → %s", pp_number, old_stage, new_stage)
                         pp.stage = new_stage
                         session.commit()
                         stats["stage_changes"].append(pp_number)
+                        _notify_subscribers(session, pp_number, "stage_change",
+                            f"{pp_number} moved to {new_stage}",
+                            f"Stage changed from {old_stage} to {new_stage}.",
+                            "notify_stage")
 
                     # Doc changes — re-fetch detail and diff
                     doc_changes = _check_doc_changes(session, client, pp, entry, now)
                     if doc_changes:
                         stats["doc_changes"].append(pp_number)
+                        _notify_subscribers(session, pp_number, "new_docs",
+                            f"New documents for {pp_number}",
+                            "New documents have been uploaded to this proposal.",
+                            "notify_docs")
 
             except Exception:
                 logger.exception("Worker: failed %s", pp_number)
@@ -134,6 +143,9 @@ def _run_cycle() -> dict:
 
         # 4. Generate briefs for PPs that have chunks but no brief in DB
         stats["briefs_generated"] = _generate_missing_briefs(session)
+
+        # 5. Check exhibition expiry — warn subscribers 7 days before
+        _check_expiry_warnings(session)
 
     finally:
         client.close()
@@ -317,6 +329,142 @@ def _generate_missing_briefs(session) -> int:
             break
 
     return generated
+
+
+def _notify_subscribers(session, pp_number: str, event_type: str, title: str, message: str, pref_field: str):
+    """Create in-app notifications + send emails for PP subscribers."""
+    from scraper.models import InAppNotification, Subscription
+    from workers.email import send_email_notification_sync
+
+    subs = (
+        session.query(Subscription)
+        .filter_by(pp_number=pp_number, active=True)
+        .all()
+    )
+
+    for sub in subs:
+        # Check notification preference
+        if not getattr(sub, pref_field, True):
+            continue
+
+        # In-app notification
+        notif = InAppNotification(
+            user_id=sub.user_id,
+            pp_number=pp_number,
+            event_type=event_type,
+            title=title,
+            message=message,
+            read=False,
+            created_at=datetime.now(timezone.utc),
+        )
+        session.add(notif)
+
+        # Email
+        try:
+            from scraper.models import User
+            user = session.get(User, sub.user_id)
+            if user and user.email:
+                _send_subscription_email(user.email, pp_number, title, message)
+        except Exception:
+            logger.warning("Email failed for user %d on %s", sub.user_id, pp_number)
+
+    session.commit()
+    if subs:
+        logger.info("Notified %d subscribers for %s (%s)", len(subs), pp_number, event_type)
+
+
+def _send_subscription_email(to_email: str, pp_number: str, title: str, message: str):
+    """Send subscription notification email synchronously."""
+    import httpx
+    import os
+
+    api_key = os.environ.get("RESEND_API_KEY")
+    if not api_key:
+        return
+
+    httpx.post(
+        "https://api.resend.com/emails",
+        headers={"Authorization": f"Bearer {api_key}"},
+        json={
+            "from": os.environ.get("FROM_EMAIL", "onboarding@resend.dev"),
+            "to": to_email,
+            "subject": title,
+            "html": f"""
+            <div style="font-family: 'Public Sans', Arial, sans-serif; max-width: 600px;">
+                <h2 style="color: #002664;">{title}</h2>
+                <p>{message}</p>
+                <p><a href="https://api-service-production-6a0d.up.railway.app/brief/{pp_number}"
+                   style="background: #002664; color: white; padding: 10px 20px; text-decoration: none;">
+                   View Proposal</a></p>
+            </div>""",
+        },
+        timeout=10.0,
+    )
+
+
+def _check_expiry_warnings(session):
+    """Warn subscribers when exhibition ends within 7 days."""
+    from scraper.models import PP, Subscription, InAppNotification
+    from datetime import date, timedelta
+
+    soon = date.today() + timedelta(days=7)
+    today = date.today()
+
+    expiring = (
+        session.query(PP)
+        .filter(PP.exhibition_end.isnot(None))
+        .filter(PP.exhibition_end > today)
+        .filter(PP.exhibition_end <= soon)
+        .all()
+    )
+
+    for pp in expiring:
+        days_left = (pp.exhibition_end - today).days
+
+        # Find subscribers who want expiry notifications
+        subs = (
+            session.query(Subscription)
+            .filter_by(pp_number=pp.pp_number, active=True, notify_expiry=True)
+            .all()
+        )
+
+        for sub in subs:
+            # Don't double-notify — check if already notified about this expiry
+            existing = (
+                session.query(InAppNotification)
+                .filter_by(user_id=sub.user_id, pp_number=pp.pp_number, event_type="expiry_warning")
+                .first()
+            )
+            if existing:
+                continue
+
+            notif = InAppNotification(
+                user_id=sub.user_id,
+                pp_number=pp.pp_number,
+                event_type="expiry_warning",
+                title=f"{pp.pp_number} exhibition closes in {days_left} days",
+                message=f"Exhibition for {pp.title or pp.pp_number} closes on {pp.exhibition_end}. Submit your response before it closes.",
+                read=False,
+                created_at=datetime.now(timezone.utc),
+            )
+            session.add(notif)
+
+            # Email warning too
+            try:
+                from scraper.models import User
+                user = session.get(User, sub.user_id)
+                if user:
+                    _send_subscription_email(
+                        user.email, pp.pp_number,
+                        f"{pp.pp_number} closes in {days_left} days",
+                        f"Exhibition for {pp.title or pp.pp_number} closes on {pp.exhibition_end}.",
+                    )
+            except Exception:
+                pass
+
+    session.commit()
+    if expiring:
+        logger.info("Checked expiry for %d PPs", len(expiring))
 
 
 async def trigger_scrape() -> dict:

@@ -118,7 +118,7 @@ class User(Base):
     email = Column(String, unique=True, nullable=False)
     name = Column(String)
     avatar_url = Column(String)
-    tokens_remaining = Column(Integer, nullable=False, default=50)
+    tokens_remaining = Column(Integer, nullable=False, default=500)
     tokens_used = Column(Integer, nullable=False, default=0)
     created_at = Column(DateTime, nullable=False)
     last_login = Column(DateTime, nullable=False)
@@ -205,6 +205,43 @@ class Notification(Base):
     sent_at = Column(DateTime, nullable=False)
 
     watcher = relationship("Watcher")
+
+
+class Subscription(Base):
+    """Subscribe to a specific PP for change notifications."""
+    __tablename__ = "subscriptions"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    pp_number = Column(String, ForeignKey("pps.pp_number"), nullable=False)
+    notify_docs = Column(Boolean, nullable=False, default=True)
+    notify_stage = Column(Boolean, nullable=False, default=True)
+    notify_expiry = Column(Boolean, nullable=False, default=True)
+    created_at = Column(DateTime, nullable=False)
+    active = Column(Boolean, nullable=False, default=True)
+
+    user = relationship("User")
+    pp = relationship("PP")
+
+    __table_args__ = (
+        UniqueConstraint("user_id", "pp_number"),
+    )
+
+
+class InAppNotification(Base):
+    """In-app notification feed."""
+    __tablename__ = "in_app_notifications"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    pp_number = Column(String, nullable=False)
+    event_type = Column(String, nullable=False)  # "new_docs" | "stage_change" | "expiry_warning" | "new_proposal"
+    title = Column(String, nullable=False)
+    message = Column(Text, nullable=False)
+    read = Column(Boolean, nullable=False, default=False)
+    created_at = Column(DateTime, nullable=False)
+
+    user = relationship("User")
 
 
 def create_db_engine(db_url: str = DATABASE_URL):

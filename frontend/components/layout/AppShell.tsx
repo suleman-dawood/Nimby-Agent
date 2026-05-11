@@ -22,6 +22,7 @@ import {
   fetchMe,
   type AuthUser,
 } from "@/lib/auth";
+import NotificationBell from "@/components/common/NotificationBell";
 
 const NAV_ITEMS = [
   { label: "Search", href: "/", auth: false },
@@ -121,6 +122,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
           <Group gap={8} wrap="nowrap">
             {user ? (
+              <>
+              <NotificationBell />
               <Menu shadow="md" width={200}>
                 <Menu.Target>
                   <UnstyledButton>
@@ -147,6 +150,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                   <Menu.Item onClick={handleSignOut}>Sign out</Menu.Item>
                 </Menu.Dropdown>
               </Menu>
+              </>
             ) : (
               <UnstyledButton onClick={() => login()}>
                 <Text

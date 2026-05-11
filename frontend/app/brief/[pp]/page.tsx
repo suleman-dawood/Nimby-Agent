@@ -16,7 +16,8 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { useParams, useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
-import { getBrief, getCitation } from "@/lib/api";
+import { getBrief, getCitation, subscribe, unsubscribe, getSubscriptions } from "@/lib/api";
+import { isAuthenticated } from "@/lib/auth";
 import BriefViewer from "@/components/brief/BriefViewer";
 import ChatPanel from "@/components/brief/ChatPanel";
 import SiteContextTab from "@/components/brief/SiteContextTab";
@@ -29,6 +30,8 @@ export default function BriefPage() {
   const [chatOpened, setChatOpened] = useState(false);
   const [userAddress, setUserAddress] = useState<string | null>(null);
   const [distanceKm, setDistanceKm] = useState(0);
+  const [subscribed, setSubscribed] = useState(false);
+  const [subLoading, setSubLoading] = useState(false);
 
   useEffect(() => {
     const stored = sessionStorage.getItem("nimby_search");
@@ -39,6 +42,12 @@ export default function BriefPage() {
         (r: { pp_number: string }) => r.pp_number === ppNumber
       );
       if (pp) setDistanceKm(pp.distance_km || 0);
+    }
+    // Check subscription status
+    if (isAuthenticated()) {
+      getSubscriptions().then((subs) => {
+        setSubscribed(subs.some((s) => s.pp_number === ppNumber));
+      }).catch(() => {});
     }
   }, [ppNumber]);
 
@@ -182,6 +191,28 @@ export default function BriefPage() {
             {!chatOpened && (
               <Button variant="outline" onClick={() => setChatOpened(true)}>
                 Ask questions
+              </Button>
+            )}
+            {isAuthenticated() && (
+              <Button
+                variant={subscribed ? "light" : "outline"}
+                color={subscribed ? "green" : "blue"}
+                loading={subLoading}
+                onClick={async () => {
+                  setSubLoading(true);
+                  try {
+                    if (subscribed) {
+                      await unsubscribe(ppNumber);
+                      setSubscribed(false);
+                    } else {
+                      await subscribe(ppNumber);
+                      setSubscribed(true);
+                    }
+                  } catch {}
+                  setSubLoading(false);
+                }}
+              >
+                {subscribed ? "Subscribed" : "Subscribe to updates"}
               </Button>
             )}
           </div>
