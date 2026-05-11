@@ -13,7 +13,6 @@ import {
 } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { usePathname, useRouter } from "next/navigation";
-import { useGoogleLogin } from "@react-oauth/google";
 import { useEffect, useState, useCallback } from "react";
 import {
   exchangeGoogleToken,
@@ -45,17 +44,29 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  const login = useGoogleLogin({
-    onSuccess: async (response) => {
-      try {
-        const authRes = await exchangeGoogleToken(response.access_token);
-        setUser(authRes.user);
-      } catch (err) {
-        console.error("Auth failed:", err);
-      }
-    },
-    onError: () => console.error("Google login failed"),
-  });
+  const handleLogin = useCallback(() => {
+    import("@react-oauth/google").then(({ useGoogleLogin }) => {
+      // Can't use hook dynamically — use tokenClient directly
+    }).catch(() => {});
+    // Use google.accounts.oauth2 directly
+    if (typeof window !== "undefined" && (window as any).google?.accounts?.oauth2) {
+      const client = (window as any).google.accounts.oauth2.initTokenClient({
+        client_id: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || "",
+        scope: "openid email profile",
+        callback: async (response: any) => {
+          if (response.access_token) {
+            try {
+              const authRes = await exchangeGoogleToken(response.access_token);
+              setUser(authRes.user);
+            } catch (err) {
+              console.error("Auth failed:", err);
+            }
+          }
+        },
+      });
+      client.requestAccessToken();
+    }
+  }, []);
 
   const handleSignOut = useCallback(() => {
     signOut();
@@ -152,7 +163,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
               </Menu>
               </>
             ) : (
-              <UnstyledButton onClick={() => login()}>
+              <UnstyledButton onClick={handleLogin}>
                 <Text
                   style={{
                     fontFamily: "'Public Sans', sans-serif",

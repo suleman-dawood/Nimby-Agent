@@ -15,7 +15,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <head />
+      <head>
+        <script src="https://accounts.google.com/gsi/client" async defer />
+      </head>
       <body>
         <Providers>
           <AppShell>{children}</AppShell>
