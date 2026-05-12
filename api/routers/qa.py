@@ -3,10 +3,13 @@
 from __future__ import annotations
 
 import json
+import logging
 
 from fastapi import APIRouter, Depends
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
+
+logger = logging.getLogger(__name__)
 
 from api.deps import get_session
 from api.middleware.auth import get_current_user, get_optional_user
@@ -26,6 +29,7 @@ router = APIRouter(prefix="/api/qa", tags=["qa"])
 
 @router.post("/ask", response_model=AskResponse)
 def ask(req: AskRequest):
+    logger.info("ask pp=%s q=%s", req.pp_number, req.question[:80])
     result = answer_question(req.pp_number, req.question)
     return AskResponse(
         answer=result.answer,
@@ -162,6 +166,7 @@ def _stream_impact(pp_number: str, address: str, distance_km: float):
 
 @router.post("/ask/stream")
 def ask_stream(req: AskRequest):
+    logger.info("ask/stream pp=%s q=%s", req.pp_number, req.question[:80])
     return StreamingResponse(
         _stream_qa(req.pp_number, req.question),
         media_type="text/event-stream",
@@ -241,6 +246,7 @@ def _stream_impact_fast(pp_number: str, address: str, distance_km: float):
 
 @router.post("/impact-fast/stream")
 def impact_fast_stream(req: ImpactRequest):
+    logger.info("impact-fast pp=%s addr=%s", req.pp_number, req.address[:40])
     return StreamingResponse(
         _stream_impact_fast(req.pp_number, req.address, req.distance_km),
         media_type="text/event-stream",
@@ -288,10 +294,15 @@ async def agent_stream(
     from scraper.models import User
 
     user = deduct.user
+    logger.info("agent/stream pp=%s user=%s q=%s", req.pp_number, user.id, req.question[:80])
 
     async def generate():
-        async for chunk in stream_agent_response(req.pp_number, req.question, str(user.id)):
-            yield chunk
-        deduct(action="agent_chat", pp_number=req.pp_number)
+        try:
+            async for chunk in stream_agent_response(req.pp_number, req.question, str(user.id)):
+                yield chunk
+            deduct(action="agent_chat", pp_number=req.pp_number)
+        except Exception as e:
+            logger.error("agent/stream failed pp=%s: %s", req.pp_number, str(e)[:200])
+            yield f"data: {json.dumps({'type': 'error', 'content': 'Agent error'})}\n\n"
 
     return StreamingResponse(generate(), media_type="text/event-stream")

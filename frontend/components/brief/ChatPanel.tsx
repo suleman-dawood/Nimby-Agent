@@ -161,6 +161,14 @@ export default function ChatPanel({
           setIsStreaming(false);
         },
         onDone: () => {
+          setMessages((prev) => {
+            const updated = [...prev];
+            const last = updated[updated.length - 1];
+            if (last?.role === "assistant" && last.streaming) {
+              updated[updated.length - 1] = { ...last, streaming: false };
+            }
+            return updated;
+          });
           setIsStreaming(false);
           scrollToBottom();
         },

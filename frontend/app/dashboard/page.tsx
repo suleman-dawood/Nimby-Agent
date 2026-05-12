@@ -90,10 +90,10 @@ export default function DashboardPage() {
               marginBottom: 4,
             }}
           >
-            Dashboard
+            Settings
           </Text>
           <Title order={2}>
-            Welcome, {user.name || user.email}
+            {user.name || user.email}
           </Title>
           <div
             style={{

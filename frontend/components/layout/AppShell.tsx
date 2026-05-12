@@ -26,7 +26,7 @@ import NotificationBell from "@/components/common/NotificationBell";
 const NAV_ITEMS = [
   { label: "Search", href: "/", auth: false },
   { label: "Results", href: "/results", auth: false },
-  { label: "Dashboard", href: "/dashboard", auth: true },
+  { label: "Settings", href: "/dashboard", auth: true },
   { label: "About", href: "/about", auth: false },
 ];
 

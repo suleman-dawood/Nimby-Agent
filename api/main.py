@@ -1,13 +1,21 @@
 """FastAPI application for Nimby Agent."""
 
 import asyncio
+import logging
 from contextlib import asynccontextmanager
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(name)s %(levelname)s %(message)s",
+    datefmt="%H:%M:%S",
+)
 
 from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from api.deps import configure_api_keys
 from api.middleware.auth import get_current_user
+from api.middleware.logging import RequestLoggingMiddleware
 from api.routers import auth, briefs, qa, search, site_context, submissions, subscriptions, tokens, watchers
 
 
@@ -41,6 +49,7 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+app.add_middleware(RequestLoggingMiddleware)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
@@ -60,6 +69,7 @@ app.include_router(submissions.router)
 app.include_router(tokens.router)
 app.include_router(site_context.router)
 app.include_router(watchers.router)
+app.include_router(subscriptions.router)
 
 
 @app.get("/api/health")

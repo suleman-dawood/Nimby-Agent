@@ -2,10 +2,13 @@
 
 from __future__ import annotations
 
+import logging
 import os
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
+
+logger = logging.getLogger(__name__)
 
 from api.deps import get_session
 from api.schemas.briefs import BriefResponse, CitationRequest, CitationResponse
@@ -19,8 +22,10 @@ BRIEFS_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file
 
 @router.get("/{pp_number}", response_model=BriefResponse)
 def get_brief(pp_number: str, session: Session = Depends(get_session)):
+    logger.info("get_brief pp=%s", pp_number)
     pp = session.get(PP, pp_number)
     if not pp:
+        logger.warning("brief 404 pp=%s", pp_number)
         raise HTTPException(status_code=404, detail=f"PP {pp_number} not found")
 
     # Try DB first, fall back to file, then generate a metadata-only brief

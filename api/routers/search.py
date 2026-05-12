@@ -2,8 +2,12 @@
 
 from __future__ import annotations
 
+import logging
+
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
+
+logger = logging.getLogger(__name__)
 
 from api.deps import get_session
 from api.schemas.search import (
@@ -26,8 +30,10 @@ router = APIRouter(prefix="/api/search", tags=["search"])
 
 @router.post("/geocode", response_model=GeocodeResponse)
 def geocode(req: GeocodeRequest):
+    logger.info("geocode addr=%s", req.address[:60])
     result = geocode_address(req.address)
     if not result:
+        logger.warning("geocode failed addr=%s", req.address[:60])
         raise HTTPException(status_code=404, detail="Could not geocode address")
 
     lat, lng = result
@@ -48,6 +54,7 @@ def nearby(
     radius_km: float = Query(default=10.0, ge=1, le=100),
     session: Session = Depends(get_session),
 ):
+    logger.info("nearby lat=%.4f lng=%.4f r=%skm", lat, lng, radius_km)
     results = find_nearby_pps(session, lat, lng, radius_km)
 
     # If too few results, expand radius
