@@ -1,7 +1,7 @@
 """Multi-agent planning analysis system built on Google ADK.
 
-Architecture:
-  Root Orchestrator (gemini-2.5-pro) — routes questions to specialist agents
+Architecture (all gemini-2.5-pro):
+  Root Orchestrator — routes questions to specialist agents
   ├── Document Analyst    — RAG search over proposal PDFs
   ├── Site Intelligence   — spatial data, zoning, hazards, nearby places
   └── Compliance Checker  — cross-references proposal vs LEP controls
@@ -27,7 +27,7 @@ from pipeline.llm_utils import load_prompt
 
 document_analyst = Agent(
     name="document_analyst",
-    model="gemini-2.5-flash",
+    model="gemini-2.5-pro",
     description="Searches and analyses planning proposal documents (PDFs). "
     "Use for questions about what the proposal says, traffic studies, shadow diagrams, "
     "environmental reports, building heights, and any content from uploaded documents.",
@@ -37,7 +37,7 @@ document_analyst = Agent(
 
 site_intelligence = Agent(
     name="site_intelligence",
-    model="gemini-2.5-flash",
+    model="gemini-2.5-pro",
     description="Provides planning controls, zoning, hazard data, and nearby amenities. "
     "Use for questions about zoning, building height limits, FSR, heritage, bushfire, "
     "flood risk, environmental constraints, or what's nearby (schools, hospitals, parks).",
@@ -47,7 +47,7 @@ site_intelligence = Agent(
 
 compliance_checker = Agent(
     name="compliance_checker",
-    model="gemini-2.5-flash",
+    model="gemini-2.5-pro",
     description="Checks whether a planning proposal complies with the Local Environmental Plan (LEP). "
     "Use for questions about compliance, permissibility, whether something is allowed, "
     "or how the proposal compares to current planning controls.",
