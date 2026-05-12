@@ -83,6 +83,16 @@ def get_citation(
     session: Session = Depends(get_session),
 ):
     logger.info("citation pp=%s doc=%s p=%d", pp_number, req.document_title[:40], req.page)
+
+    # Non-document citations (spatial data, portal metadata) — return info text
+    if req.document_title.startswith("NSW ") or req.document_title.startswith("LEP "):
+        return CitationResponse(
+            text=f"Source: {req.document_title}. This data comes from NSW government systems, not proposal documents.",
+            document_title=req.document_title,
+            page=0,
+            pdf_url=None,
+        )
+
     chunk = find_chunk(session, pp_number, req.document_title, req.page)
     if not chunk:
         logger.warning("citation 404 pp=%s doc=%s p=%d", pp_number, req.document_title[:40], req.page)

@@ -209,16 +209,37 @@ def find_chunk(session, pp_number: str, cited_doc: str, cited_page: int):
     """Find a chunk by PP, document title substring, and page number."""
     from scraper.models import Chunk, Document
 
+    # Skip non-document citations (spatial data, portal metadata, etc.)
+    if cited_doc.startswith("NSW ") or cited_doc.startswith("LEP "):
+        return None
+
     for length in [50, 30, 20, 15]:
         title_fragment = cited_doc[:length]
+
+        # Exact page match
+        if cited_page > 0:
+            chunk = (
+                session.query(Chunk)
+                .join(Document)
+                .filter(
+                    Chunk.pp_number == pp_number,
+                    Chunk.page_number == cited_page,
+                    Document.title.like(f"%{title_fragment}%"),
+                )
+                .first()
+            )
+            if chunk:
+                return chunk
+
+        # Page 0 or exact match failed — return first chunk from that document
         chunk = (
             session.query(Chunk)
             .join(Document)
             .filter(
                 Chunk.pp_number == pp_number,
-                Chunk.page_number == cited_page,
                 Document.title.like(f"%{title_fragment}%"),
             )
+            .order_by(Chunk.page_number)
             .first()
         )
         if chunk:
