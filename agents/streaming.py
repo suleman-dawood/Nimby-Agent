@@ -107,16 +107,21 @@ async def stream_agent_response(pp_number: str, question: str, user_id: str):
                 # Capture citations from search_documents results
                 if resp.name == "search_documents":
                     try:
+                        # Debug: log the response structure
+                        logger.info("search_documents resp type=%s", type(resp.response))
+                        logger.info("search_documents resp=%s", str(resp.response)[:500])
                         result = resp.response if isinstance(resp.response, dict) else {}
-                        logger.info("search_documents returned %d chunks", len(result.get("chunks", [])))
                         for chunk in result.get("chunks", []):
                             if chunk.get("document_title") and chunk.get("page_number"):
                                 tool_citations.append({
                                     "document_title": chunk["document_title"],
                                     "page": chunk["page_number"],
                                 })
+                        logger.info("Extracted %d tool citations", len(tool_citations))
                     except Exception as e:
                         logger.warning("Failed to extract tool citations: %s", e)
+                elif resp.name == "get_proposal_metadata":
+                    logger.info("get_proposal_metadata resp type=%s", type(resp.response))
 
         # Text content (streaming or final)
         if event.content and event.content.parts:
