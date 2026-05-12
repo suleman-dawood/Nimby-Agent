@@ -6,7 +6,6 @@ import {
   Text,
   NavLink,
   Burger,
-  Badge,
   Avatar,
   Menu,
   UnstyledButton,
@@ -153,14 +152,19 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                 <Menu.Target>
                   <UnstyledButton>
                     <Group gap={6} wrap="nowrap">
-                      <Badge
-                        size="sm"
-                        variant="light"
-                        color="green"
-                        style={{ fontFamily: "'Public Sans', sans-serif" }}
+                      <span
+                        style={{
+                          fontFamily: "'Public Sans', sans-serif",
+                          fontSize: 11,
+                          fontWeight: 600,
+                          color: "var(--nsw-white)",
+                          background: "rgba(255,255,255,0.15)",
+                          padding: "3px 8px",
+                          letterSpacing: "0.04em",
+                        }}
                       >
                         {user.tokens_remaining} tokens
-                      </Badge>
+                      </span>
                       <Avatar
                         src={user.avatar_url}
                         alt={user.name || "User"}

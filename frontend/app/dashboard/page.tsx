@@ -6,8 +6,6 @@ import {
   Text,
   Stack,
   Card,
-  Alert,
-  Badge,
   Group,
 } from "@mantine/core";
 import { useEffect, useState, useCallback } from "react";
@@ -108,13 +106,22 @@ export default function DashboardPage() {
         {/* Token Balance */}
         {tokenBalance && (
           <Card withBorder padding="md">
-            <Group justify="space-between">
+            <Group justify="space-between" align="flex-end">
               <div>
-                <Text style={{ fontSize: 11, color: "var(--nsw-grey-04)", textTransform: "uppercase", letterSpacing: "0.08em" }}>
+                <Text
+                  style={{
+                    fontFamily: "'Public Sans', sans-serif",
+                    fontSize: 11,
+                    textTransform: "uppercase",
+                    letterSpacing: "0.08em",
+                    color: "var(--nsw-grey-04)",
+                    marginBottom: 4,
+                  }}
+                >
                   Token Balance
                 </Text>
                 <Group gap={8} mt={4}>
-                  <Text style={{ fontSize: 28, fontWeight: 700 }}>
+                  <Text style={{ fontSize: 28, fontWeight: 700, color: "var(--nsw-brand-dark)" }}>
                     {tokenBalance.tokens_remaining}
                   </Text>
                   <Text style={{ fontSize: 13, color: "var(--nsw-grey-04)" }}>
@@ -122,9 +129,19 @@ export default function DashboardPage() {
                   </Text>
                 </Group>
               </div>
-              <Badge size="lg" variant="light" color="blue">
+              <span
+                style={{
+                  fontFamily: "'Public Sans', sans-serif",
+                  fontSize: 11,
+                  fontWeight: 600,
+                  color: "var(--nsw-grey-04)",
+                  background: "var(--nsw-grey-01)",
+                  padding: "4px 10px",
+                  letterSpacing: "0.04em",
+                }}
+              >
                 {tokenBalance.tokens_used} used
-              </Badge>
+              </span>
             </Group>
           </Card>
         )}
@@ -194,9 +211,15 @@ export default function DashboardPage() {
                         {sub.pp_number}
                       </Text>
                       <Group gap={6} mt={4}>
-                        {sub.notify_docs && <Badge size="xs" variant="light" color="blue">Docs</Badge>}
-                        {sub.notify_stage && <Badge size="xs" variant="light" color="violet">Stage</Badge>}
-                        {sub.notify_expiry && <Badge size="xs" variant="light" color="orange">Expiry</Badge>}
+                        {sub.notify_docs && (
+                          <span style={{ fontFamily: "'Public Sans', sans-serif", fontSize: 10, fontWeight: 600, color: "var(--nsw-brand-dark)", background: "var(--nsw-grey-01)", padding: "2px 6px", textTransform: "uppercase", letterSpacing: "0.04em" }}>Docs</span>
+                        )}
+                        {sub.notify_stage && (
+                          <span style={{ fontFamily: "'Public Sans', sans-serif", fontSize: 10, fontWeight: 600, color: "var(--nsw-brand-dark)", background: "var(--nsw-grey-01)", padding: "2px 6px", textTransform: "uppercase", letterSpacing: "0.04em" }}>Stage</span>
+                        )}
+                        {sub.notify_expiry && (
+                          <span style={{ fontFamily: "'Public Sans', sans-serif", fontSize: 10, fontWeight: 600, color: "var(--nsw-brand-dark)", background: "var(--nsw-grey-01)", padding: "2px 6px", textTransform: "uppercase", letterSpacing: "0.04em" }}>Expiry</span>
+                        )}
                       </Group>
                     </div>
                     <Text
@@ -250,13 +273,18 @@ export default function DashboardPage() {
                   <Group justify="space-between">
                     <div>
                       <Group gap={6}>
-                        <Badge size="xs" variant="filled" color={
-                          n.event_type === "new_docs" ? "blue" :
-                          n.event_type === "stage_change" ? "violet" :
-                          n.event_type === "expiry_warning" ? "orange" : "green"
-                        }>
+                        <span style={{
+                          fontFamily: "'Public Sans', sans-serif",
+                          fontSize: 10,
+                          fontWeight: 600,
+                          color: "var(--nsw-white)",
+                          background: "var(--nsw-brand-dark)",
+                          padding: "2px 6px",
+                          textTransform: "uppercase",
+                          letterSpacing: "0.04em",
+                        }}>
                           {n.event_type.replace("_", " ")}
-                        </Badge>
+                        </span>
                         <Text style={{ fontSize: 11, color: "var(--nsw-grey-04)" }}>
                           {new Date(n.created_at).toLocaleDateString()}
                         </Text>

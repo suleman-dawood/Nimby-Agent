@@ -84,6 +84,7 @@ async def stream_agent_response(pp_number: str, question: str, user_id: str):
 
     full_text = ""
     tool_citations = []  # Citations from search_documents tool results
+    active_tools = set()  # Track tools that started but haven't finished
 
     async for event in runner.run_async(
         user_id=user_id,
@@ -93,28 +94,18 @@ async def stream_agent_response(pp_number: str, question: str, user_id: str):
             parts=[types.Part(text=contextualized)],
         ),
     ):
-        # Agent transfer events (multi-agent routing)
-        if hasattr(event, 'actions') and event.actions:
-            transfer = getattr(event.actions, 'transfer_to_agent', None)
-            if transfer:
-                agent_labels = {
-                    "document_analyst": "Searching documents",
-                    "site_intelligence": "Checking spatial data",
-                    "compliance_checker": "Checking compliance",
-                }
-                label = agent_labels.get(transfer, transfer)
-                yield _sse({"type": "tool_call", "tool": label, "status": "calling"})
-
         # Tool call requests
         fn_calls = event.get_function_calls()
         if fn_calls:
             for call in fn_calls:
+                active_tools.add(call.name)
                 yield _sse({"type": "tool_call", "tool": call.name, "status": "calling"})
 
         # Tool responses (tool finished) — extract citations from search results
         fn_responses = event.get_function_responses()
         if fn_responses:
             for resp in fn_responses:
+                active_tools.discard(resp.name)
                 yield _sse({"type": "tool_call", "tool": resp.name, "status": "done"})
                 # Capture citations from search_documents results
                 if resp.name == "search_documents":
@@ -184,6 +175,10 @@ async def stream_agent_response(pp_number: str, question: str, user_id: str):
 
     if unique_cits:
         yield _sse({"type": "citations", "citations": unique_cits})
+
+    # Flush any tool calls still showing as "calling"
+    for tool_name in active_tools:
+        yield _sse({"type": "tool_call", "tool": tool_name, "status": "done"})
 
     yield "data: [DONE]\n\n"
 
