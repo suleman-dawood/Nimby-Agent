@@ -6,8 +6,8 @@ Docstrings become tool descriptions the LLM sees.
 
 from __future__ import annotations
 
-import json
 import logging
+import time
 
 logger = logging.getLogger(__name__)
 
@@ -26,8 +26,11 @@ def search_documents(pp_number: str, query: str, k: int = 8) -> dict:
     Returns:
         dict with 'chunks' list containing text, page_number, document_title
     """
+    start = time.perf_counter()
     from pipeline.retrieve import retrieve
     chunks = retrieve(pp_number, query, k=k, tier_filter=[1, 2])
+    ms = (time.perf_counter() - start) * 1000
+    logger.info("search_documents pp=%s q='%s' → %d chunks (%.0fms)", pp_number, query[:40], len(chunks), ms)
     return {
         "chunks": [
             {
@@ -53,13 +56,17 @@ def get_proposal_metadata(pp_number: str) -> dict:
     Returns:
         dict with proposal metadata
     """
+    start = time.perf_counter()
     from scraper.models import PP, create_db_engine, create_session
     engine = create_db_engine()
     session = create_session(engine)
     try:
         pp = session.get(PP, pp_number)
         if not pp:
+            logger.warning("get_proposal_metadata: %s not found", pp_number)
             return {"error": f"Proposal {pp_number} not found"}
+        ms = (time.perf_counter() - start) * 1000
+        logger.info("get_proposal_metadata pp=%s → %s (%.0fms)", pp_number, pp.title[:40] if pp.title else "?", ms)
         return {
             "pp_number": pp.pp_number,
             "title": pp.title,
@@ -91,13 +98,17 @@ def get_site_context(pp_number: str) -> dict:
     Returns:
         dict with zoning, height limits, heritage, hazards, environmental data
     """
+    start = time.perf_counter()
     from scraper.models import SiteContext, create_db_engine, create_session
     engine = create_db_engine()
     session = create_session(engine)
     try:
         ctx = session.query(SiteContext).filter_by(pp_number=pp_number).first()
         if not ctx:
+            logger.warning("get_site_context: no data for %s", pp_number)
             return {"error": "No site context available for this proposal"}
+        ms = (time.perf_counter() - start) * 1000
+        logger.info("get_site_context pp=%s → zone=%s (%.0fms)", pp_number, ctx.zoning, ms)
         return {
             "zoning": ctx.zoning,
             "max_height_m": ctx.max_height_m,
