@@ -51,6 +51,24 @@ interface Props {
 
 const CITE_RE = /\[doc:\s*.+?\s*(\|\s*p\.?\s*\d+)?\]/g;
 
+function replaceCitesWithNumbers(text: string, citations?: Citation[]): string {
+  if (!citations || citations.length === 0) {
+    return text.replace(CITE_RE, "");
+  }
+  return text.replace(CITE_RE, (match) => {
+    // Try to match this cite to a citation index
+    const titleMatch = match.match(/\[doc:\s*(.+?)(\s*\||\s*\])/);
+    if (!titleMatch) return "";
+    const title = titleMatch[1].trim();
+    const idx = citations.findIndex(
+      (c) => c.document_title.toLowerCase().includes(title.toLowerCase().slice(0, 20))
+        || title.toLowerCase().includes(c.document_title.toLowerCase().slice(0, 20))
+    );
+    if (idx >= 0) return ` **[${idx + 1}]**`;
+    return "";
+  });
+}
+
 export default function ChatPanel({
   ppNumber,
   address,
@@ -340,7 +358,7 @@ export default function ChatPanel({
                   )}
                   <div className="chat-markdown">
                     <ReactMarkdown>
-                      {msg.content.replace(CITE_RE, "")}
+                      {replaceCitesWithNumbers(msg.content, msg.citations)}
                     </ReactMarkdown>
                   </div>
 
