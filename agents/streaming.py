@@ -130,13 +130,16 @@ async def stream_agent_response(pp_number: str, question: str, user_id: str):
                     full_text += part.text
                     yield _sse({"type": "token", "content": part.text})
 
-    # Post-stream: merge inline citations + tool citations
+    # Post-stream: prefer inline citations, fallback to tool citations
     full_text = normalize_citations(full_text)
     inline_citations = extract_citations(full_text)
 
+    # Use inline citations if agent cited sources; otherwise fallback to tool citations
+    source_list = inline_citations if inline_citations else tool_citations
+
     seen = set()
     unique_cits = []
-    for c in inline_citations + tool_citations:
+    for c in source_list:
         doc = c.get("document_title", "")
         page = c.get("page", 0)
         key = f"{doc}|{page}"
