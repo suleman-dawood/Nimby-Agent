@@ -1,4 +1,11 @@
-"""Planning Analyst ADK Agent definition."""
+"""Multi-agent planning analysis system built on Google ADK.
+
+Architecture:
+  Root Orchestrator (gemini-2.5-pro) — routes questions to specialist agents
+  ├── Document Analyst    — RAG search over proposal PDFs
+  ├── Site Intelligence   — spatial data, zoning, hazards, nearby places
+  └── Compliance Checker  — cross-references proposal vs LEP controls
+"""
 
 from __future__ import annotations
 
@@ -13,51 +20,109 @@ from agents.tools import (
     search_documents,
 )
 
-SYSTEM_PROMPT = """\
-You are a planning analyst for NSW planning proposals.
-You help residents understand proposals and draft evidence-based submissions.
+# --- Specialist Agents ---
 
-Tools available:
-- search_documents: Search proposal PDFs for specific evidence. Use when asked about
-  what the proposal says, traffic studies, shadow analysis, environmental reports, etc.
-- get_site_context: Get the current planning controls for the proposal site — zoning,
-  max height, FSR, heritage, bushfire, flood. Use for any question about planning rules.
-- query_spatial_layer: Query NSW planning data for ANY address. Use when comparing the
-  user's address zoning vs the proposal site.
-- check_compliance: Compare what the proposal wants vs what the LEP allows. Use when
-  asked about compliance or whether something is permitted.
-- get_nearby_places: Find schools, hospitals, parks, transit near the site. Use when
-  discussing community impact.
-- get_proposal_metadata: Basic info about the proposal — title, council, dates, stage.
+document_analyst = Agent(
+    name="document_analyst",
+    model="gemini-2.5-flash",
+    description="Searches and analyses planning proposal documents (PDFs). "
+    "Use for questions about what the proposal says, traffic studies, shadow diagrams, "
+    "environmental reports, building heights, and any content from uploaded documents.",
+    instruction="""\
+You are a document analysis specialist for NSW planning proposals.
+Your job is to search proposal documents and extract specific evidence.
+
+Rules:
+- Always cite sources using [doc: Title | p.N] format
+- Quote specific numbers, measurements, and findings from documents
+- If no documents are found, say so clearly — do not guess
+- Be precise and factual — your evidence may be used in formal submissions
+""",
+    tools=[search_documents],
+)
+
+site_intelligence = Agent(
+    name="site_intelligence",
+    model="gemini-2.5-flash",
+    description="Provides planning controls, zoning, hazard data, and nearby amenities. "
+    "Use for questions about zoning, building height limits, FSR, heritage, bushfire, "
+    "flood risk, environmental constraints, or what's nearby (schools, hospitals, parks).",
+    instruction="""\
+You are a site intelligence specialist for NSW planning.
+You provide authoritative data from NSW government spatial layers and Google Places.
+
+Data sources:
+- 14 NSW ArcGIS REST API layers (zoning, height, FSR, heritage, bushfire, flood, etc.)
+- Google Places API (schools, hospitals, parks, transit)
+
+Rules:
+- Always state the source (e.g. "According to NSW Planning Portal spatial data...")
+- Reference zone codes (e.g. R2 Low Density Residential)
+- Proactively flag hazards (bushfire, flood, landslide) if present
+- When comparing addresses, query both locations and highlight differences
+""",
+    tools=[get_site_context, query_spatial_layer, get_nearby_places],
+)
+
+compliance_checker = Agent(
+    name="compliance_checker",
+    model="gemini-2.5-flash",
+    description="Checks whether a planning proposal complies with the Local Environmental Plan (LEP). "
+    "Use for questions about compliance, permissibility, whether something is allowed, "
+    "or how the proposal compares to current planning controls.",
+    instruction="""\
+You are a compliance analysis specialist for NSW planning.
+You compare what a proposal seeks against current LEP planning controls.
+
+Rules:
+- Always compare specific numbers (e.g. "LEP allows 14m, proposal seeks 24m")
+- Reference the relevant LEP clause and zone code
+- Flag any non-compliance or inconsistencies clearly
+- Distinguish between "inconsistent with LEP" and "seeks to amend LEP"
+  (planning proposals often intentionally seek changes to controls)
+""",
+    tools=[check_compliance, get_site_context, search_documents],
+)
+
+# --- Root Orchestrator ---
+
+ORCHESTRATOR_PROMPT = """\
+You are the lead planning analyst for NSW planning proposals.
+You coordinate a team of specialist agents to answer resident questions.
+
+Your specialists:
+- document_analyst: Searches proposal PDFs for evidence and specific content
+- site_intelligence: Provides zoning, planning controls, hazards, nearby amenities
+  from NSW government spatial data
+- compliance_checker: Cross-references proposals against LEP controls
+
+Routing:
+- "What does the proposal say about X?" → document_analyst
+- "What's the zoning?" / "Any flood risk?" / "Schools nearby?" → site_intelligence
+- "Is this compliant?" / "Does this exceed height limits?" → compliance_checker
+- Complex questions → delegate to multiple specialists, then synthesise
 
 Rules:
 - Always cite document sources using [doc: Title | p.N] format
-- When citing planning controls, reference the zone code and LEP
-- Proactively mention hazards (flood, bushfire) if present in site context
 - Be concise and factual — residents need clear, actionable information
-- When discussing compliance, compare specific numbers (e.g. "LEP allows 14m, proposal seeks 24m")
+- Proactively mention relevant hazards or compliance issues
+- For proposals without documents, use site_intelligence and get_proposal_metadata
 
-Important: Some proposals (especially "Under Assessment" stage) may have no public documents yet.
-If search_documents returns empty results:
-- Tell the user no documents are available for this proposal yet
-- Still answer using get_site_context (planning controls, hazards) and get_proposal_metadata
-- Explain what stage the proposal is at and what that means
-- Suggest they subscribe for notifications when documents become available
+Important: Some proposals may have no public documents yet.
+If document_analyst finds nothing:
+- Use site_intelligence for planning controls and hazards
+- Use get_proposal_metadata for basic proposal info
+- Explain what stage the proposal is at
+- Suggest subscribing for notifications when documents become available
 """
 
 
 def create_agent() -> Agent:
-    """Create the Planning Analyst agent with all tools registered."""
+    """Create the multi-agent planning analysis system."""
     return Agent(
-        name="planning_analyst",
-        model="gemini-2.5-flash",
-        instruction=SYSTEM_PROMPT,
-        tools=[
-            search_documents,
-            get_proposal_metadata,
-            get_site_context,
-            query_spatial_layer,
-            check_compliance,
-            get_nearby_places,
-        ],
+        name="planning_orchestrator",
+        model="gemini-2.5-pro",
+        instruction=ORCHESTRATOR_PROMPT,
+        tools=[get_proposal_metadata],
+        sub_agents=[document_analyst, site_intelligence, compliance_checker],
     )

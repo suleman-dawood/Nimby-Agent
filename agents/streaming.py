@@ -93,6 +93,18 @@ async def stream_agent_response(pp_number: str, question: str, user_id: str):
             parts=[types.Part(text=contextualized)],
         ),
     ):
+        # Agent transfer events (multi-agent routing)
+        if hasattr(event, 'actions') and event.actions:
+            transfer = getattr(event.actions, 'transfer_to_agent', None)
+            if transfer:
+                agent_labels = {
+                    "document_analyst": "Searching documents",
+                    "site_intelligence": "Checking spatial data",
+                    "compliance_checker": "Checking compliance",
+                }
+                label = agent_labels.get(transfer, transfer)
+                yield _sse({"type": "tool_call", "tool": label, "status": "calling"})
+
         # Tool call requests
         fn_calls = event.get_function_calls()
         if fn_calls:
