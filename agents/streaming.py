@@ -121,7 +121,30 @@ async def stream_agent_response(pp_number: str, question: str, user_id: str):
                     except Exception as e:
                         logger.warning("Failed to extract tool citations: %s", e)
                 elif resp.name == "get_proposal_metadata":
-                    logger.info("get_proposal_metadata resp type=%s", type(resp.response))
+                    try:
+                        result = resp.response if isinstance(resp.response, dict) else {}
+                        if result.get("title") and "error" not in result:
+                            tool_citations.append({
+                                "document_title": "NSW Planning Portal — " + (result.get("title") or pp_number),
+                                "page": 0,
+                            })
+                    except Exception:
+                        pass
+                elif resp.name == "get_site_context":
+                    try:
+                        result = resp.response if isinstance(resp.response, dict) else {}
+                        if "error" not in result:
+                            tool_citations.append({
+                                "document_title": "NSW Government Spatial Data (ArcGIS)",
+                                "page": 0,
+                            })
+                    except Exception:
+                        pass
+                elif resp.name == "check_compliance":
+                    tool_citations.append({
+                        "document_title": "LEP Compliance Check",
+                        "page": 0,
+                    })
 
         # Text content (streaming or final)
         if event.content and event.content.parts:
