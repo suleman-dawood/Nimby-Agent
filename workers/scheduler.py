@@ -19,7 +19,7 @@ from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
-SCRAPE_INTERVAL_HOURS = 6
+SCRAPE_INTERVAL_HOURS = 1
 DATA_DIR = Path("/tmp/nimby_scrape")
 
 

@@ -77,6 +77,26 @@ def health():
     return {"status": "ok"}
 
 
+@app.get("/api/admin/worker-status")
+async def worker_status():
+    """Check worker timing and subscription counts — no auth needed for quick checks."""
+    from scraper.models import Subscription, InAppNotification, create_db_engine, create_session
+    engine = create_db_engine()
+    session = create_session(engine)
+    try:
+        active_subs = session.query(Subscription).filter_by(active=True).count()
+        total_notifs = session.query(InAppNotification).count()
+        unread = session.query(InAppNotification).filter_by(read=False).count()
+    finally:
+        session.close()
+    return {
+        "worker_interval_hours": 1,
+        "active_subscriptions": active_subs,
+        "total_notifications": total_notifs,
+        "unread_notifications": unread,
+    }
+
+
 @app.post("/api/admin/trigger-scrape")
 async def trigger_scrape(user=Depends(get_current_user)):
     """Manual trigger for scrape + notify cycle. Requires auth."""
