@@ -49,7 +49,7 @@ interface Props {
   onToggle: () => void;
 }
 
-const CITE_RE = /\[doc:\s*.+?\s*\|\s*p\.?\s*\d+\]/g;
+const CITE_RE = /\[doc:\s*.+?\s*(\|\s*p\.?\s*\d+)?\]/g;
 
 export default function ChatPanel({
   ppNumber,

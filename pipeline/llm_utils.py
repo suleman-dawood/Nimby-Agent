@@ -55,6 +55,8 @@ PROMPTS_DIR = os.path.join(os.path.dirname(__file__), "prompts")
 
 # Canonical citation format: [doc: Title | p.N]
 CITE_PATTERN = re.compile(r'\[doc:\s*(.+?)\s*\|\s*p\.?\s*(\d+)\]')
+# Fallback: [doc: Title] without page number (agent sometimes omits page)
+CITE_PATTERN_NO_PAGE = re.compile(r'\[doc:\s*(.+?)\s*\]')
 
 
 def load_prompt(name: str) -> str:
@@ -145,10 +147,25 @@ def normalize_citations(text: str) -> str:
 def extract_citations(text: str) -> list[dict]:
     """Extract all citations from normalized text. Every occurrence kept with its span."""
     results = []
+    seen = set()
+    # Primary: [doc: Title | p.N]
     for match in CITE_PATTERN.finditer(text):
         title = match.group(1).strip()
         page = int(match.group(2))
-        results.append({"document_title": title, "page": page, "span": match.span()})
+        key = f"{title}|{page}"
+        if key not in seen:
+            seen.add(key)
+            results.append({"document_title": title, "page": page, "span": match.span()})
+    # Fallback: [doc: Title] without page
+    for match in CITE_PATTERN_NO_PAGE.finditer(text):
+        title = match.group(1).strip()
+        # Skip if already matched by primary pattern (which includes | p.N)
+        if "|" in title:
+            continue
+        key = f"{title}|0"
+        if key not in seen:
+            seen.add(key)
+            results.append({"document_title": title, "page": 0, "span": match.span()})
     return results
 
 
