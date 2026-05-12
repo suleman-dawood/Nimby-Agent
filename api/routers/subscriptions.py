@@ -2,10 +2,13 @@
 
 from __future__ import annotations
 
+import logging
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
+
+logger = logging.getLogger(__name__)
 
 from api.deps import get_session
 from api.middleware.auth import get_current_user
@@ -29,6 +32,7 @@ def subscribe(
     session: Session = Depends(get_session),
 ):
     """Subscribe to a PP for change notifications."""
+    logger.info("subscribe pp=%s user=%s", req.pp_number, user.id)
     existing = (
         session.query(Subscription)
         .filter_by(user_id=user.id, pp_number=req.pp_number)
@@ -78,6 +82,7 @@ def unsubscribe(
     user: User = Depends(get_current_user),
     session: Session = Depends(get_session),
 ):
+    logger.info("unsubscribe pp=%s user=%s", pp_number, user.id)
     sub = (
         session.query(Subscription)
         .filter_by(user_id=user.id, pp_number=pp_number)

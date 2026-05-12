@@ -82,8 +82,10 @@ def get_citation(
     req: CitationRequest,
     session: Session = Depends(get_session),
 ):
+    logger.info("citation pp=%s doc=%s p=%d", pp_number, req.document_title[:40], req.page)
     chunk = find_chunk(session, pp_number, req.document_title, req.page)
     if not chunk:
+        logger.warning("citation 404 pp=%s doc=%s p=%d", pp_number, req.document_title[:40], req.page)
         raise HTTPException(status_code=404, detail="Citation source not found")
 
     doc = (
