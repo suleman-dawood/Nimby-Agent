@@ -83,6 +83,7 @@ async def stream_agent_response(pp_number: str, question: str, user_id: str):
     contextualized = f"[Proposal: {pp_number}] {question}"
 
     full_text = ""
+    tool_citations = []  # Citations from search_documents tool results
 
     async for event in runner.run_async(
         user_id=user_id,
@@ -98,11 +99,24 @@ async def stream_agent_response(pp_number: str, question: str, user_id: str):
             for call in fn_calls:
                 yield _sse({"type": "tool_call", "tool": call.name, "status": "calling"})
 
-        # Tool responses (tool finished)
+        # Tool responses (tool finished) — extract citations from search results
         fn_responses = event.get_function_responses()
         if fn_responses:
             for resp in fn_responses:
                 yield _sse({"type": "tool_call", "tool": resp.name, "status": "done"})
+                # Capture citations from search_documents results
+                if resp.name == "search_documents":
+                    try:
+                        result = resp.response if isinstance(resp.response, dict) else {}
+                        logger.info("search_documents returned %d chunks", len(result.get("chunks", [])))
+                        for chunk in result.get("chunks", []):
+                            if chunk.get("document_title") and chunk.get("page_number"):
+                                tool_citations.append({
+                                    "document_title": chunk["document_title"],
+                                    "page": chunk["page_number"],
+                                })
+                    except Exception as e:
+                        logger.warning("Failed to extract tool citations: %s", e)
 
         # Text content (streaming or final)
         if event.content and event.content.parts:
@@ -111,16 +125,19 @@ async def stream_agent_response(pp_number: str, question: str, user_id: str):
                     full_text += part.text
                     yield _sse({"type": "token", "content": part.text})
 
-    # Post-stream: extract citations
+    # Post-stream: merge inline citations + tool citations
     full_text = normalize_citations(full_text)
-    citations = extract_citations(full_text)
+    inline_citations = extract_citations(full_text)
+
     seen = set()
     unique_cits = []
-    for c in citations:
-        key = f"{c['document_title']}|{c['page']}"
+    for c in inline_citations + tool_citations:
+        doc = c.get("document_title", "")
+        page = c.get("page", 0)
+        key = f"{doc}|{page}"
         if key not in seen:
             seen.add(key)
-            unique_cits.append({"document_title": c["document_title"], "page": c["page"]})
+            unique_cits.append({"document_title": doc, "page": page})
 
     if unique_cits:
         yield _sse({"type": "citations", "citations": unique_cits})
