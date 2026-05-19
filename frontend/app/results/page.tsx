@@ -196,9 +196,16 @@ export default function ResultsPage() {
         )}
 
         {filteredAll.length === 0 && (
-          <Alert color="blue" title="No proposals found">
-            No planning proposals match your filters near this address.
-          </Alert>
+          <div style={{ border: "2px dashed var(--nsw-grey-03)", padding: 32, textAlign: "center" }}>
+            <Text style={{ fontFamily: "'Public Sans', sans-serif", fontSize: 16, fontWeight: 600, color: "var(--nsw-brand-dark)", marginBottom: 8 }}>
+              No planning proposals found
+            </Text>
+            <Text style={{ fontSize: 13, color: "var(--nsw-grey-04)" }}>
+              {allPPs.length === 0
+                ? "No proposals found within your search radius. Try expanding the radius or searching a different address."
+                : "No proposals match your selected stage filters. Try enabling more filters above."}
+            </Text>
+          </div>
         )}
       </Stack>
     </Container>

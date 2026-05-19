@@ -25,3 +25,15 @@ class CitationResponse(BaseModel):
     document_title: str
     page: int
     pdf_url: str | None = None
+
+
+class TimelineEvent(BaseModel):
+    date: str
+    event_type: str
+    title: str
+    detail: str | None = None
+
+
+class TimelineResponse(BaseModel):
+    pp_number: str
+    events: list[TimelineEvent]

@@ -79,14 +79,24 @@ async def stream_agent_response(pp_number: str, question: str, user_id: str):
     # Create session only once per user+pp combo (preserves conversation history)
     if session_id not in _sessions:
         try:
-            await runner.session_service.create_session(
-                app_name="nimby",
-                user_id=user_id,
-                session_id=session_id,
+            existing = await runner.session_service.get_session(
+                app_name="nimby", user_id=user_id, session_id=session_id,
             )
-            _sessions.add(session_id)
-        except Exception:
-            # Session might already exist from a previous run
+            if existing is not None:
+                _sessions.add(session_id)
+            else:
+                await runner.session_service.create_session(
+                    app_name="nimby", user_id=user_id, session_id=session_id,
+                )
+                _sessions.add(session_id)
+        except Exception as exc:
+            logger.debug("Session lookup failed for %s: %s", session_id, exc)
+            try:
+                await runner.session_service.create_session(
+                    app_name="nimby", user_id=user_id, session_id=session_id,
+                )
+            except Exception:
+                pass
             _sessions.add(session_id)
 
     contextualized = f"[Proposal: {pp_number}] {question}"
@@ -131,11 +141,12 @@ async def stream_agent_response(pp_number: str, question: str, user_id: str):
                         yield _sse({"type": "token", "content": part.text})
 
     except Exception as e:
-        logger.error("Agent stream error pp=%s: %s", pp_number, str(e)[:300])
+        logger.error("Agent stream error pp=%s: %s", pp_number, str(e)[:300], exc_info=True)
+        _sessions.discard(session_id)
         if not full_text:
             yield _sse({"type": "error", "content": f"Agent error: {str(e)[:100]}"})
-        # Reset session on error so next message starts fresh
-        _sessions.discard(session_id)
+            yield "data: [DONE]\n\n"
+            return
 
     # Post-stream: prefer inline citations, fallback to tool citations
     full_text = normalize_citations(full_text)

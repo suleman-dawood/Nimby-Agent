@@ -36,6 +36,7 @@ export default function DashboardPage() {
   const [notifications, setNotifications] = useState<NotificationResponse[]>([]);
   const [inAppNotifs, setInAppNotifs] = useState<InAppNotificationResponse[]>([]);
   const [tokenBalance, setTokenBalance] = useState<{ tokens_remaining: number; tokens_used: number } | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     if (!isAuthenticated()) {
@@ -46,6 +47,7 @@ export default function DashboardPage() {
   }, [router]);
 
   const loadData = useCallback(async () => {
+    setIsLoading(true);
     try {
       const [w, tb, subs, appNotifs] = await Promise.all([
         getWatchers(), getTokenBalance(), getSubscriptions(), getInAppNotifications(),
@@ -65,7 +67,9 @@ export default function DashboardPage() {
       }
       allNotifs.sort((a, b) => new Date(b.sent_at).getTime() - new Date(a.sent_at).getTime());
       setNotifications(allNotifs);
-    } catch {}
+    } catch {} finally {
+      setIsLoading(false);
+    }
   }, []);
 
   useEffect(() => {
@@ -73,6 +77,19 @@ export default function DashboardPage() {
   }, [user, loadData]);
 
   if (!user) return null;
+
+  if (isLoading) {
+    return (
+      <Container size="md" py="md">
+        <Stack gap="lg">
+          {[1, 2, 3].map((i) => (
+            <div key={i} style={{ height: 60, background: "var(--nsw-grey-01)", animation: "skeletonPulse 1.5s ease-in-out infinite", animationDelay: `${i * 0.2}s` }} />
+          ))}
+        </Stack>
+        <style>{`@keyframes skeletonPulse { 0%,100% { opacity:1 } 50% { opacity:0.4 } }`}</style>
+      </Container>
+    );
+  }
 
   return (
     <Container size="md" py="md">
@@ -227,6 +244,7 @@ export default function DashboardPage() {
                       c="red"
                       style={{ cursor: "pointer" }}
                       onClick={async () => {
+                        if (!window.confirm(`Unsubscribe from ${sub.pp_number}?`)) return;
                         try {
                           await unsubscribe(sub.pp_number);
                           loadData();

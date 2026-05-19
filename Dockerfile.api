@@ -23,7 +23,8 @@ RUN pip install --no-cache-dir \
     "google-auth>=2.29" \
     "google-adk>=1.0.0" \
     tqdm \
-    pdfplumber
+    pdfplumber \
+    fpdf2
 
 COPY api/ api/
 COPY pipeline/ pipeline/

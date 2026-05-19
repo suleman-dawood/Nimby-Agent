@@ -59,8 +59,8 @@ export default function SiteContextTab({ ppNumber }: Props) {
     );
   }
 
-  const zoneCode = ctx.zoning?.split(" ")[0] || "";
-  const zoneName = ctx.zoning?.replace(/^[A-Z0-9]+ - /, "") || "Unknown";
+  const zoneCode = ctx.zoning?.split(" ")[0] || "N/A";
+  const zoneName = ctx.zoning?.replace(/^[A-Z0-9]+ - /, "") || "N/A";
 
   return (
     <Stack gap="md">
