@@ -43,13 +43,19 @@ export default function ResultsPage() {
     if (stored) {
       const parsed = JSON.parse(stored);
       setData(parsed);
-      // Default: all stages active
       const allStages = [...new Set(
         [...(parsed.results || []), ...(parsed.policy_results || [])]
           .map((pp: NearbyPP) => pp.stage)
           .filter(Boolean)
       )] as string[];
-      setActiveStages(allStages);
+      // Restore saved filters or default to all
+      const savedFilters = sessionStorage.getItem("nimby_stage_filters");
+      if (savedFilters) {
+        const parsed2 = JSON.parse(savedFilters) as string[];
+        setActiveStages(parsed2.filter((s) => allStages.includes(s)));
+      } else {
+        setActiveStages(allStages);
+      }
     }
   }, []);
 
@@ -71,9 +77,11 @@ export default function ResultsPage() {
   const filteredAll = [...filteredResults, ...filteredPolicy];
 
   const toggleStage = (stage: string) => {
-    setActiveStages((prev) =>
-      prev.includes(stage) ? prev.filter((s) => s !== stage) : [...prev, stage]
-    );
+    setActiveStages((prev) => {
+      const next = prev.includes(stage) ? prev.filter((s) => s !== stage) : [...prev, stage];
+      sessionStorage.setItem("nimby_stage_filters", JSON.stringify(next));
+      return next;
+    });
   };
 
   const handlePPClick = (pp: NearbyPP) => {

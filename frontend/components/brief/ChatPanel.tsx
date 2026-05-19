@@ -4,8 +4,6 @@ import {
   Text,
   Textarea,
   Stack,
-  Loader,
-  Center,
   Chip,
   Group,
   ActionIcon,
@@ -326,16 +324,18 @@ export default function ChatPanel({
         }}
       >
         <Stack gap="md">
-          {messages.length === 0 && isStreaming && (
-            <Center py="xl">
-              <Loader size="sm" color="dark" />
-              <Text
-                ml="sm"
-                style={{ fontSize: 12, color: "var(--nsw-grey-04)" }}
-              >
-                Analysing impact on your address...
-              </Text>
-            </Center>
+          {messages.length === 0 && (
+            <div style={{ padding: "24px 0" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
+                <div style={{ width: 8, height: 8, background: "var(--nsw-brand-dark)", animation: "chatPulse 1.2s ease-in-out infinite" }} />
+                <Text style={{ fontSize: 12, color: "var(--nsw-grey-04)", fontFamily: "'Public Sans', sans-serif" }}>
+                  {isStreaming ? "Analysing impact on your address..." : "Loading chat..."}
+                </Text>
+              </div>
+              {[70, 90, 55].map((w, i) => (
+                <div key={i} style={{ height: 10, width: `${w}%`, background: "var(--nsw-grey-02)", marginBottom: 6, animation: "chatPulse 1.5s ease-in-out infinite", animationDelay: `${i * 0.2}s` }} />
+              ))}
+            </div>
           )}
 
           {messages.map((msg, i) => (
@@ -516,6 +516,10 @@ export default function ChatPanel({
       </div>
 
       <style>{`
+        @keyframes chatPulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.3; }
+        }
         @keyframes blink {
           50% { opacity: 0; }
         }

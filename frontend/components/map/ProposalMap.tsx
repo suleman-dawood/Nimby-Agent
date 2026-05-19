@@ -128,7 +128,6 @@ export default function ProposalMap({
               icon={getStageIcon(pp.stage)}
               onClick={() => {
                 setSelected(pp);
-                onMarkerClick?.(pp);
               }}
             />
           )
@@ -185,6 +184,18 @@ export default function ProposalMap({
               }}
             >
               {selected.distance_km} km away
+            </div>
+            <div
+              style={{
+                fontSize: 11,
+                fontWeight: 600,
+                color: "var(--nsw-brand-dark)",
+                cursor: "pointer",
+                marginTop: 6,
+              }}
+              onClick={() => onMarkerClick?.(selected)}
+            >
+              View proposal &rarr;
             </div>
           </div>
         </InfoWindow>
