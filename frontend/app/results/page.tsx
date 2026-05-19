@@ -162,12 +162,15 @@ export default function ResultsPage() {
           </button>
           {compareMode && compareSelection.length > 0 && (
             <span style={{ fontFamily: "'Public Sans', sans-serif", fontSize: 12, color: "var(--nsw-grey-04)" }}>
-              {compareSelection.join(" vs ")}{compareSelection.length < 2 ? " — select one more" : ""}
+              {compareSelection.join(" vs ")}{compareSelection.length < 2 ? " — select at least one more" : ` (${compareSelection.length}/4)`}
             </span>
           )}
-          {compareMode && compareSelection.length === 2 && (
+          {compareMode && compareSelection.length >= 2 && (
             <button
-              onClick={() => router.push(`/compare?pp1=${compareSelection[0]}&pp2=${compareSelection[1]}`)}
+              onClick={() => {
+                const params = compareSelection.map((pp, i) => `pp${i + 1}=${pp}`).join("&");
+                router.push(`/compare?${params}`);
+              }}
               style={{
                 background: "var(--nsw-brand-dark)", color: "var(--nsw-white)",
                 border: "none", padding: "6px 14px", cursor: "pointer",
@@ -211,7 +214,7 @@ export default function ResultsPage() {
                     compareSelected={compareSelection.includes(pp.pp_number)}
                     onCompareToggle={compareMode ? (ppn) => setCompareSelection((prev) =>
                       prev.includes(ppn) ? prev.filter((p) => p !== ppn)
-                        : prev.length < 2 ? [...prev, ppn] : prev
+                        : prev.length < 4 ? [...prev, ppn] : prev
                     ) : undefined}
                   />
                 </Grid.Col>
@@ -245,7 +248,7 @@ export default function ResultsPage() {
                     compareSelected={compareSelection.includes(pp.pp_number)}
                     onCompareToggle={compareMode ? (ppn) => setCompareSelection((prev) =>
                       prev.includes(ppn) ? prev.filter((p) => p !== ppn)
-                        : prev.length < 2 ? [...prev, ppn] : prev
+                        : prev.length < 4 ? [...prev, ppn] : prev
                     ) : undefined}
                   />
                 </Grid.Col>

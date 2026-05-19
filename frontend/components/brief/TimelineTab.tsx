@@ -57,16 +57,55 @@ export default function TimelineTab({ ppNumber }: { ppNumber: string }) {
     return <Text style={{ fontSize: 13, color: "var(--nsw-grey-04)" }}>No timeline data available.</Text>;
   }
 
+  // Group documents by date to avoid huge lists
+  const grouped: (TimelineEvent & { count?: number })[] = [];
+  let docBatch: { date: string; count: number; category: string } | null = null;
+
+  for (const event of data) {
+    if (event.event_type === "document_added") {
+      const dateKey = event.date.split("T")[0];
+      if (docBatch && docBatch.date === dateKey) {
+        docBatch.count++;
+      } else {
+        if (docBatch) {
+          grouped.push({
+            date: docBatch.date, event_type: "document_added",
+            title: `${docBatch.count} document${docBatch.count > 1 ? "s" : ""} added`,
+            detail: docBatch.category, count: docBatch.count,
+          });
+        }
+        docBatch = { date: dateKey, count: 1, category: event.detail || "" };
+      }
+    } else {
+      if (docBatch) {
+        grouped.push({
+          date: docBatch.date, event_type: "document_added",
+          title: `${docBatch.count} document${docBatch.count > 1 ? "s" : ""} added`,
+          detail: docBatch.category, count: docBatch.count,
+        });
+        docBatch = null;
+      }
+      grouped.push(event);
+    }
+  }
+  if (docBatch) {
+    grouped.push({
+      date: docBatch.date, event_type: "document_added",
+      title: `${docBatch.count} document${docBatch.count > 1 ? "s" : ""} added`,
+      detail: docBatch.category, count: docBatch.count,
+    });
+  }
+
   return (
     <Stack gap={0}>
-      {data.map((event, i) => (
+      {grouped.map((event, i) => (
         <div
           key={i}
           style={{
             display: "flex",
             gap: 12,
             padding: "10px 0",
-            borderLeft: `2px solid ${i < data.length - 1 ? "var(--nsw-grey-02)" : "transparent"}`,
+            borderLeft: `2px solid ${i < grouped.length - 1 ? "var(--nsw-grey-02)" : "transparent"}`,
             marginLeft: 8,
             paddingLeft: 16,
             position: "relative",
