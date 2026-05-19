@@ -380,6 +380,7 @@ def _send_subscription_email(to_email: str, pp_number: str, title: str, message:
 
     api_key = os.environ.get("RESEND_API_KEY")
     if not api_key:
+        logger.warning("RESEND_API_KEY not set — skipping email to %s for %s", to_email, pp_number)
         return
 
     httpx.post(

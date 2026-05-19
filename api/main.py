@@ -79,18 +79,45 @@ def health():
 
 @app.get("/api/admin/worker-status")
 async def worker_status():
-    """Check worker timing and subscription counts — no auth needed for quick checks."""
-    from scraper.models import Subscription, InAppNotification, create_db_engine, create_session
+    """Full system status — no auth needed for quick checks."""
+    from scraper.models import PP, Chunk, Brief, Document, SiteContext, Subscription, InAppNotification, User, create_db_engine, create_session
+    from sqlalchemy import func
     engine = create_db_engine()
     session = create_session(engine)
     try:
+        total_pps = session.query(PP).count()
+        pps_with_chunks = session.query(Chunk.pp_number).distinct().count()
+        total_chunks = session.query(Chunk).count()
+        total_docs = session.query(Document).count()
+        total_briefs = session.query(Brief).count()
+        total_spatial = session.query(SiteContext).count()
+        geocoded = session.query(PP).filter(PP.latitude.isnot(None)).count()
         active_subs = session.query(Subscription).filter_by(active=True).count()
         total_notifs = session.query(InAppNotification).count()
         unread = session.query(InAppNotification).filter_by(read=False).count()
+        total_users = session.query(User).count()
+        last_scraped = session.query(func.max(PP.scraped_at)).scalar()
+
+        # Stage breakdown
+        stages = dict(
+            session.query(PP.stage, func.count(PP.pp_number))
+            .group_by(PP.stage)
+            .all()
+        )
     finally:
         session.close()
     return {
         "worker_interval_hours": 1,
+        "total_pps": total_pps,
+        "pps_with_chunks": pps_with_chunks,
+        "total_chunks": total_chunks,
+        "total_documents": total_docs,
+        "total_briefs": total_briefs,
+        "geocoded": geocoded,
+        "spatial_enriched": total_spatial,
+        "stages": stages,
+        "last_scraped": str(last_scraped) if last_scraped else None,
+        "users": total_users,
         "active_subscriptions": active_subs,
         "total_notifications": total_notifs,
         "unread_notifications": unread,
