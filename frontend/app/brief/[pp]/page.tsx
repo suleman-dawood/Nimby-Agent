@@ -193,6 +193,23 @@ export default function BriefPage() {
                 Ask questions
               </Button>
             )}
+            <Button
+              variant="outline"
+              onClick={() => {
+                window.open(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/api/briefs/${ppNumber}/export-pdf`, "_blank");
+              }}
+            >
+              Download PDF
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => {
+                navigator.clipboard.writeText(window.location.href);
+                alert("Link copied to clipboard");
+              }}
+            >
+              Share link
+            </Button>
             {isAuthenticated() && (
               <Button
                 variant={subscribed ? "light" : "outline"}
@@ -205,14 +222,14 @@ export default function BriefPage() {
                       await unsubscribe(ppNumber);
                       setSubscribed(false);
                     } else {
-                      await subscribe(ppNumber);
+                      await subscribe(ppNumber, { notify_docs: true, notify_stage: true, notify_expiry: true });
                       setSubscribed(true);
                     }
                   } catch {}
                   setSubLoading(false);
                 }}
               >
-                {subscribed ? "Subscribed" : "Subscribe to updates"}
+                {subscribed ? "Subscribed \u2713" : "Subscribe to updates"}
               </Button>
             )}
           </div>
@@ -226,6 +243,11 @@ export default function BriefPage() {
         opened={chatOpened}
         onToggle={() => setChatOpened(!chatOpened)}
       />
+      <style>{`
+        @media (max-width: 640px) {
+          .brief-container { margin-right: 0 !important; }
+        }
+      `}</style>
     </>
   );
 }
