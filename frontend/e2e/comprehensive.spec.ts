@@ -234,8 +234,8 @@ test.describe("Comprehensive App Test", () => {
     await page.locator(".mantine-Burger-root").click();
     await page.waitForTimeout(500);
     // Nav should now show
-    await expect(page.getByText("Search", { exact: true })).toBeVisible();
-    await expect(page.getByText("Results", { exact: true })).toBeVisible();
+    await expect(page.locator(".mantine-NavLink-label", { hasText: "Search" })).toBeVisible();
+    await expect(page.locator(".mantine-NavLink-label", { hasText: "Results" })).toBeVisible();
   });
 
   test("mobile: brief page readable", async ({ page }) => {
