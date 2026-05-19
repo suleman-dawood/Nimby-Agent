@@ -216,6 +216,8 @@ function SubmissionForm() {
                   options={{
                     componentRestrictions: { country: "au" },
                     types: ["address"],
+                    bounds: { north: -28.15, south: -37.51, east: 153.64, west: 140.99 },
+                    strictBounds: true,
                   }}
                 >
                   <TextInput

@@ -23,9 +23,15 @@ export default function WatchForm({ onCreated }: Props) {
     const g = (window as any).google;
     if (!g?.maps?.places) return;
 
+    const nswBounds = new g.maps.LatLngBounds(
+      { lat: -37.51, lng: 140.99 },
+      { lat: -28.15, lng: 153.64 },
+    );
     const autocomplete = new g.maps.places.Autocomplete(inputRef.current, {
       componentRestrictions: { country: "au" },
       types: ["address"],
+      bounds: nswBounds,
+      strictBounds: true,
     });
 
     autocomplete.addListener("place_changed", () => {
