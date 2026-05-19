@@ -139,7 +139,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                   whiteSpace: "nowrap",
                 }}
               >
-                Planning Proposals
+                Nimby Agent
               </Text>
             </div>
           </Group>

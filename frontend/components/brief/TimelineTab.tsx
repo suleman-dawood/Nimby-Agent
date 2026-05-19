@@ -35,8 +35,11 @@ export default function TimelineTab({ ppNumber }: { ppNumber: string }) {
     queryKey: ["timeline", ppNumber],
     queryFn: () =>
       fetch(`${API_BASE}/api/briefs/${ppNumber}/timeline`)
-        .then((r) => r.json())
-        .then((d) => d.events as TimelineEvent[]),
+        .then((r) => {
+          if (!r.ok) return [];
+          return r.json();
+        })
+        .then((d) => (d?.events as TimelineEvent[]) || []),
   });
 
   if (isLoading) {

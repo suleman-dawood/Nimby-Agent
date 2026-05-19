@@ -141,8 +141,9 @@ export default function ProposalMap({
           <div
             style={{
               fontFamily: "'Public Sans', Arial, sans-serif",
-              padding: "8px 4px",
+              padding: "4px 2px",
               maxWidth: 220,
+              lineHeight: 1.3,
             }}
           >
             <div

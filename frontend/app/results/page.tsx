@@ -36,6 +36,7 @@ export default function ResultsPage() {
   const router = useRouter();
   const [data, setData] = useState<SearchData | null>(null);
   const [activeStages, setActiveStages] = useState<string[]>([]);
+  const [compareMode, setCompareMode] = useState(false);
   const [compareSelection, setCompareSelection] = useState<string[]>([]);
 
   useEffect(() => {
@@ -145,32 +146,38 @@ export default function ResultsPage() {
           </Group>
         )}
 
-        {/* Compare bar */}
-        {compareSelection.length > 0 && (
-          <div style={{
-            background: "var(--nsw-brand-dark)", color: "var(--nsw-white)", padding: "8px 16px",
-            display: "flex", justifyContent: "space-between", alignItems: "center",
-            fontFamily: "'Public Sans', sans-serif", fontSize: 12,
-          }}>
-            <span>Compare: {compareSelection.join(" vs ")}{compareSelection.length < 2 ? " — select one more" : ""}</span>
-            <Group gap={8}>
-              {compareSelection.length === 2 && (
-                <button
-                  onClick={() => router.push(`/compare?pp1=${compareSelection[0]}&pp2=${compareSelection[1]}`)}
-                  style={{ background: "var(--nsw-white)", color: "var(--nsw-brand-dark)", border: "none", padding: "4px 12px", fontWeight: 600, cursor: "pointer", fontFamily: "'Public Sans', sans-serif", fontSize: 11 }}
-                >
-                  Compare
-                </button>
-              )}
-              <button
-                onClick={() => setCompareSelection([])}
-                style={{ background: "none", color: "var(--nsw-white)", border: "1px solid rgba(255,255,255,0.4)", padding: "4px 8px", cursor: "pointer", fontSize: 11 }}
-              >
-                Clear
-              </button>
-            </Group>
-          </div>
-        )}
+        {/* Compare toggle */}
+        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+          <button
+            onClick={() => { setCompareMode(!compareMode); if (compareMode) setCompareSelection([]); }}
+            style={{
+              background: compareMode ? "var(--nsw-brand-dark)" : "var(--nsw-grey-01)",
+              color: compareMode ? "var(--nsw-white)" : "var(--nsw-grey-04)",
+              border: "none", padding: "6px 14px", cursor: "pointer",
+              fontFamily: "'Public Sans', sans-serif", fontSize: 11,
+              fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em",
+            }}
+          >
+            {compareMode ? "Exit compare" : "Compare proposals"}
+          </button>
+          {compareMode && compareSelection.length > 0 && (
+            <span style={{ fontFamily: "'Public Sans', sans-serif", fontSize: 12, color: "var(--nsw-grey-04)" }}>
+              {compareSelection.join(" vs ")}{compareSelection.length < 2 ? " — select one more" : ""}
+            </span>
+          )}
+          {compareMode && compareSelection.length === 2 && (
+            <button
+              onClick={() => router.push(`/compare?pp1=${compareSelection[0]}&pp2=${compareSelection[1]}`)}
+              style={{
+                background: "var(--nsw-brand-dark)", color: "var(--nsw-white)",
+                border: "none", padding: "6px 14px", cursor: "pointer",
+                fontFamily: "'Public Sans', sans-serif", fontSize: 11, fontWeight: 600,
+              }}
+            >
+              Compare now &rarr;
+            </button>
+          )}
+        </div>
 
         <MapProvider>
           <ProposalMap
@@ -200,12 +207,12 @@ export default function ResultsPage() {
                 <Grid.Col key={pp.pp_number} span={{ base: 12, sm: 6, md: 4 }}>
                   <PPCard
                     pp={pp}
-                    onClick={() => handlePPClick(pp)}
+                    onClick={compareMode ? undefined : () => handlePPClick(pp)}
                     compareSelected={compareSelection.includes(pp.pp_number)}
-                    onCompareToggle={(ppn) => setCompareSelection((prev) =>
+                    onCompareToggle={compareMode ? (ppn) => setCompareSelection((prev) =>
                       prev.includes(ppn) ? prev.filter((p) => p !== ppn)
                         : prev.length < 2 ? [...prev, ppn] : prev
-                    )}
+                    ) : undefined}
                   />
                 </Grid.Col>
               ))}
@@ -234,12 +241,12 @@ export default function ResultsPage() {
                 <Grid.Col key={pp.pp_number} span={{ base: 12, sm: 6, md: 4 }}>
                   <PPCard
                     pp={pp}
-                    onClick={() => handlePPClick(pp)}
+                    onClick={compareMode ? undefined : () => handlePPClick(pp)}
                     compareSelected={compareSelection.includes(pp.pp_number)}
-                    onCompareToggle={(ppn) => setCompareSelection((prev) =>
+                    onCompareToggle={compareMode ? (ppn) => setCompareSelection((prev) =>
                       prev.includes(ppn) ? prev.filter((p) => p !== ppn)
                         : prev.length < 2 ? [...prev, ppn] : prev
-                    )}
+                    ) : undefined}
                   />
                 </Grid.Col>
               ))}
