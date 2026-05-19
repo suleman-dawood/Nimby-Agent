@@ -36,6 +36,7 @@ export default function ResultsPage() {
   const router = useRouter();
   const [data, setData] = useState<SearchData | null>(null);
   const [activeStages, setActiveStages] = useState<string[]>([]);
+  const [compareSelection, setCompareSelection] = useState<string[]>([]);
 
   useEffect(() => {
     const stored = sessionStorage.getItem("nimby_search");
@@ -136,6 +137,33 @@ export default function ResultsPage() {
           </Group>
         )}
 
+        {/* Compare bar */}
+        {compareSelection.length > 0 && (
+          <div style={{
+            background: "var(--nsw-brand-dark)", color: "var(--nsw-white)", padding: "8px 16px",
+            display: "flex", justifyContent: "space-between", alignItems: "center",
+            fontFamily: "'Public Sans', sans-serif", fontSize: 12,
+          }}>
+            <span>Compare: {compareSelection.join(" vs ")}{compareSelection.length < 2 ? " — select one more" : ""}</span>
+            <Group gap={8}>
+              {compareSelection.length === 2 && (
+                <button
+                  onClick={() => router.push(`/compare?pp1=${compareSelection[0]}&pp2=${compareSelection[1]}`)}
+                  style={{ background: "var(--nsw-white)", color: "var(--nsw-brand-dark)", border: "none", padding: "4px 12px", fontWeight: 600, cursor: "pointer", fontFamily: "'Public Sans', sans-serif", fontSize: 11 }}
+                >
+                  Compare
+                </button>
+              )}
+              <button
+                onClick={() => setCompareSelection([])}
+                style={{ background: "none", color: "var(--nsw-white)", border: "1px solid rgba(255,255,255,0.4)", padding: "4px 8px", cursor: "pointer", fontSize: 11 }}
+              >
+                Clear
+              </button>
+            </Group>
+          </div>
+        )}
+
         <MapProvider>
           <ProposalMap
             center={{ lat: data.lat, lng: data.lng }}
@@ -162,7 +190,15 @@ export default function ResultsPage() {
             <Grid>
               {filteredResults.map((pp) => (
                 <Grid.Col key={pp.pp_number} span={{ base: 12, sm: 6, md: 4 }}>
-                  <PPCard pp={pp} onClick={() => handlePPClick(pp)} />
+                  <PPCard
+                    pp={pp}
+                    onClick={() => handlePPClick(pp)}
+                    compareSelected={compareSelection.includes(pp.pp_number)}
+                    onCompareToggle={(ppn) => setCompareSelection((prev) =>
+                      prev.includes(ppn) ? prev.filter((p) => p !== ppn)
+                        : prev.length < 2 ? [...prev, ppn] : prev
+                    )}
+                  />
                 </Grid.Col>
               ))}
             </Grid>
@@ -188,7 +224,15 @@ export default function ResultsPage() {
             <Grid>
               {filteredPolicy.map((pp) => (
                 <Grid.Col key={pp.pp_number} span={{ base: 12, sm: 6, md: 4 }}>
-                  <PPCard pp={pp} onClick={() => handlePPClick(pp)} />
+                  <PPCard
+                    pp={pp}
+                    onClick={() => handlePPClick(pp)}
+                    compareSelected={compareSelection.includes(pp.pp_number)}
+                    onCompareToggle={(ppn) => setCompareSelection((prev) =>
+                      prev.includes(ppn) ? prev.filter((p) => p !== ppn)
+                        : prev.length < 2 ? [...prev, ppn] : prev
+                    )}
+                  />
                 </Grid.Col>
               ))}
             </Grid>

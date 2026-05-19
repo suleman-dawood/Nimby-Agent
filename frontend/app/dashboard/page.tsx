@@ -36,6 +36,7 @@ export default function DashboardPage() {
   const [notifications, setNotifications] = useState<NotificationResponse[]>([]);
   const [inAppNotifs, setInAppNotifs] = useState<InAppNotificationResponse[]>([]);
   const [tokenBalance, setTokenBalance] = useState<{ tokens_remaining: number; tokens_used: number } | null>(null);
+  const [tokenHistory, setTokenHistory] = useState<{ id: number; action: string; tokens_spent: number; pp_number: string | null; created_at: string }[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -49,13 +50,14 @@ export default function DashboardPage() {
   const loadData = useCallback(async () => {
     setIsLoading(true);
     try {
-      const [w, tb, subs, appNotifs] = await Promise.all([
-        getWatchers(), getTokenBalance(), getSubscriptions(), getInAppNotifications(),
+      const [w, tb, subs, appNotifs, th] = await Promise.all([
+        getWatchers(), getTokenBalance(), getSubscriptions(), getInAppNotifications(), getTokenHistory(),
       ]);
       setWatchers(w);
       setTokenBalance(tb);
       setSubscriptions(subs);
       setInAppNotifs(appNotifs);
+      setTokenHistory(th.usage || []);
 
       // Load watcher notifications
       const allNotifs: NotificationResponse[] = [];
@@ -160,6 +162,42 @@ export default function DashboardPage() {
                 {tokenBalance.tokens_used} used
               </span>
             </Group>
+          </Card>
+        )}
+
+        {/* Token History */}
+        {tokenHistory.length > 0 && (
+          <Card withBorder padding="md">
+            <Text
+              style={{
+                fontFamily: "'Public Sans', sans-serif",
+                fontSize: 11,
+                textTransform: "uppercase",
+                letterSpacing: "0.08em",
+                color: "var(--nsw-grey-04)",
+                marginBottom: 12,
+              }}
+            >
+              Token History
+            </Text>
+            <Stack gap={4}>
+              {tokenHistory.slice(0, 20).map((t) => (
+                <Group key={t.id} justify="space-between" style={{ fontSize: 12, padding: "4px 0", borderBottom: "1px solid var(--nsw-grey-01)" }}>
+                  <div>
+                    <Text style={{ fontSize: 12, fontWeight: 500 }}>{t.action.replace("_", " ")}</Text>
+                    {t.pp_number && <Text style={{ fontSize: 11, color: "var(--nsw-grey-04)" }}>{t.pp_number}</Text>}
+                  </div>
+                  <Group gap={12}>
+                    <Text style={{ fontSize: 11, color: "var(--nsw-grey-04)" }}>
+                      {new Date(t.created_at).toLocaleDateString()}
+                    </Text>
+                    <Text style={{ fontSize: 12, fontWeight: 600, color: "var(--nsw-brand-dark)" }}>
+                      -{t.tokens_spent}
+                    </Text>
+                  </Group>
+                </Group>
+              ))}
+            </Stack>
           </Card>
         )}
 

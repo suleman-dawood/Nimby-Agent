@@ -55,17 +55,27 @@ function replaceCitesWithNumbers(text: string, citations?: Citation[]): string {
   if (!citations || citations.length === 0) {
     return text.replace(CITE_RE, "");
   }
-  const usedInLine = new Set<number>();
+  const emitted = new Set<number>();
   return text.replace(CITE_RE, (match) => {
-    const titleMatch = match.match(/\[doc:\s*(.+?)(\s*\||\s*\])/);
-    if (!titleMatch) return "";
-    const title = titleMatch[1].trim();
-    const idx = citations.findIndex(
-      (c) => c.document_title.toLowerCase().includes(title.toLowerCase().slice(0, 20))
-        || title.toLowerCase().includes(c.document_title.toLowerCase().slice(0, 20))
+    // Extract title and optional page from [doc: Title | p.N] or [doc: Title]
+    const fullMatch = match.match(/\[doc:\s*(.+?)(?:\s*\|\s*p\.?\s*(\d+))?\s*\]/);
+    if (!fullMatch) return "";
+    const title = fullMatch[1].trim().toLowerCase();
+    const page = fullMatch[2] ? parseInt(fullMatch[2]) : 0;
+
+    // Try exact title+page match first
+    let idx = citations.findIndex(
+      (c) => c.document_title.toLowerCase() === title && (page === 0 || c.page === page)
     );
-    if (idx >= 0 && !usedInLine.has(idx)) {
-      usedInLine.add(idx);
+    // Fallback: substring match
+    if (idx < 0) {
+      idx = citations.findIndex(
+        (c) => c.document_title.toLowerCase().includes(title.slice(0, 30))
+          || title.includes(c.document_title.toLowerCase().slice(0, 30))
+      );
+    }
+    if (idx >= 0) {
+      emitted.add(idx);
       return ` **[${idx + 1}]**`;
     }
     return "";

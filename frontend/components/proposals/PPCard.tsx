@@ -39,9 +39,11 @@ function distanceLabel(km: number, geoSource: string | null) {
 interface Props {
   pp: NearbyPP;
   onClick?: () => void;
+  compareSelected?: boolean;
+  onCompareToggle?: (ppNumber: string) => void;
 }
 
-export default function PPCard({ pp, onClick }: Props) {
+export default function PPCard({ pp, onClick, compareSelected, onCompareToggle }: Props) {
   return (
     <Card
       padding="md"
@@ -103,6 +105,21 @@ export default function PPCard({ pp, onClick }: Props) {
           {distanceLabel(pp.distance_km, pp.geo_source)}
         </Text>
       </div>
+      {onCompareToggle && (
+        <button
+          onClick={(e) => { e.stopPropagation(); onCompareToggle(pp.pp_number); }}
+          style={{
+            marginTop: 8, width: "100%", padding: "4px 0",
+            background: compareSelected ? "var(--nsw-brand-dark)" : "var(--nsw-grey-01)",
+            color: compareSelected ? "var(--nsw-white)" : "var(--nsw-grey-04)",
+            border: "none", cursor: "pointer",
+            fontFamily: "'Public Sans', sans-serif", fontSize: 10,
+            textTransform: "uppercase", letterSpacing: "0.06em", fontWeight: 600,
+          }}
+        >
+          {compareSelected ? "Selected for compare" : "Compare"}
+        </button>
+      )}
     </Card>
   );
 }
