@@ -8,7 +8,7 @@ test.describe("Home Page", () => {
 
   test("shows header with NSW branding", async ({ page }) => {
     await page.goto("/");
-    await expect(page.getByText("Planning Proposals", { exact: true })).toBeVisible();
+    await expect(page.getByText("Nimby Agent", { exact: true })).toBeVisible();
     await expect(page.getByText("NSW")).toBeVisible();
   });
 
