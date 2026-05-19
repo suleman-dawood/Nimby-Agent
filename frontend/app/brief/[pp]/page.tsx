@@ -8,8 +8,6 @@ import {
   Group,
   Badge,
   Button,
-  Loader,
-  Center,
   Alert,
   Tabs,
 } from "@mantine/core";
@@ -21,6 +19,7 @@ import { isAuthenticated } from "@/lib/auth";
 import BriefViewer from "@/components/brief/BriefViewer";
 import ChatPanel from "@/components/brief/ChatPanel";
 import SiteContextTab from "@/components/brief/SiteContextTab";
+import TimelineTab from "@/components/brief/TimelineTab";
 
 export default function BriefPage() {
   const params = useParams();
@@ -70,9 +69,18 @@ export default function BriefPage() {
 
   if (isLoading) {
     return (
-      <Center py="xl">
-        <Loader color="dark" />
-      </Center>
+      <Container size="md" py="xl">
+        <Stack gap="md">
+          <div style={{ height: 12, width: "30%", background: "var(--nsw-grey-02)", animation: "skeletonPulse 1.5s ease-in-out infinite" }} />
+          <div style={{ height: 28, width: "50%", background: "var(--nsw-grey-02)", animation: "skeletonPulse 1.5s ease-in-out infinite", animationDelay: "0.1s" }} />
+          <div style={{ width: 60, height: 3, background: "var(--nsw-grey-02)" }} />
+          <div style={{ height: 14, width: "40%", background: "var(--nsw-grey-02)", animation: "skeletonPulse 1.5s ease-in-out infinite", animationDelay: "0.2s" }} />
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} style={{ height: 12, width: `${90 - i * 10}%`, background: "var(--nsw-grey-02)", animation: "skeletonPulse 1.5s ease-in-out infinite", animationDelay: `${i * 0.15}s` }} />
+          ))}
+        </Stack>
+        <style>{`@keyframes skeletonPulse { 0%,100% { opacity:1 } 50% { opacity:0.4 } }`}</style>
+      </Container>
     );
   }
 
@@ -154,6 +162,7 @@ export default function BriefPage() {
             <Tabs.List>
               <Tabs.Tab value="brief">Brief</Tabs.Tab>
               <Tabs.Tab value="site-context">Site Context</Tabs.Tab>
+              <Tabs.Tab value="timeline">Timeline</Tabs.Tab>
             </Tabs.List>
 
             <Tabs.Panel value="brief" pt="md">
@@ -165,6 +174,10 @@ export default function BriefPage() {
 
             <Tabs.Panel value="site-context" pt="md">
               <SiteContextTab ppNumber={ppNumber} />
+            </Tabs.Panel>
+
+            <Tabs.Panel value="timeline" pt="md">
+              <TimelineTab ppNumber={ppNumber} />
             </Tabs.Panel>
           </Tabs>
 
@@ -193,6 +206,23 @@ export default function BriefPage() {
                 Ask questions
               </Button>
             )}
+            <Button
+              variant="outline"
+              onClick={() => {
+                window.open(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/api/briefs/${ppNumber}/export-pdf`, "_blank");
+              }}
+            >
+              Download PDF
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => {
+                navigator.clipboard.writeText(window.location.href);
+                alert("Link copied to clipboard");
+              }}
+            >
+              Share link
+            </Button>
             {isAuthenticated() && (
               <Button
                 variant={subscribed ? "light" : "outline"}
@@ -205,14 +235,14 @@ export default function BriefPage() {
                       await unsubscribe(ppNumber);
                       setSubscribed(false);
                     } else {
-                      await subscribe(ppNumber);
+                      await subscribe(ppNumber, { notify_docs: true, notify_stage: true, notify_expiry: true });
                       setSubscribed(true);
                     }
                   } catch {}
                   setSubLoading(false);
                 }}
               >
-                {subscribed ? "Subscribed" : "Subscribe to updates"}
+                {subscribed ? "Subscribed \u2713" : "Subscribe to updates"}
               </Button>
             )}
           </div>
@@ -226,6 +256,11 @@ export default function BriefPage() {
         opened={chatOpened}
         onToggle={() => setChatOpened(!chatOpened)}
       />
+      <style>{`
+        @media (max-width: 640px) {
+          .brief-container { margin-right: 0 !important; }
+        }
+      `}</style>
     </>
   );
 }

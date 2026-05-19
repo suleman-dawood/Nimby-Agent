@@ -59,8 +59,21 @@ export default function SiteContextTab({ ppNumber }: Props) {
     );
   }
 
-  const zoneCode = ctx.zoning?.split(" ")[0] || "";
-  const zoneName = ctx.zoning?.replace(/^[A-Z0-9]+ - /, "") || "Unknown";
+  // Check if all fields are empty (geocoded but no spatial data returned)
+  const hasAnyData = ctx.zoning || ctx.max_height_m || ctx.max_fsr || ctx.heritage_item ||
+    ctx.bushfire_prone || ctx.flood_planning || ctx.landslide_risk;
+
+  if (!hasAnyData) {
+    return (
+      <Alert color="blue" title="Limited data available">
+        This proposal has been geocoded but no planning control data was found at this location.
+        This can happen for LGA-wide policy proposals or sites outside mapped planning layers.
+      </Alert>
+    );
+  }
+
+  const zoneCode = ctx.zoning?.split(" ")[0] || "N/A";
+  const zoneName = ctx.zoning?.replace(/^[A-Z0-9]+ - /, "") || "N/A";
 
   return (
     <Stack gap="md">

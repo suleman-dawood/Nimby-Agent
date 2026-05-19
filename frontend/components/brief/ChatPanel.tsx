@@ -4,8 +4,6 @@ import {
   Text,
   Textarea,
   Stack,
-  Loader,
-  Center,
   Chip,
   Group,
   ActionIcon,
@@ -55,17 +53,27 @@ function replaceCitesWithNumbers(text: string, citations?: Citation[]): string {
   if (!citations || citations.length === 0) {
     return text.replace(CITE_RE, "");
   }
-  const usedInLine = new Set<number>();
+  const emitted = new Set<number>();
   return text.replace(CITE_RE, (match) => {
-    const titleMatch = match.match(/\[doc:\s*(.+?)(\s*\||\s*\])/);
-    if (!titleMatch) return "";
-    const title = titleMatch[1].trim();
-    const idx = citations.findIndex(
-      (c) => c.document_title.toLowerCase().includes(title.toLowerCase().slice(0, 20))
-        || title.toLowerCase().includes(c.document_title.toLowerCase().slice(0, 20))
+    // Extract title and optional page from [doc: Title | p.N] or [doc: Title]
+    const fullMatch = match.match(/\[doc:\s*(.+?)(?:\s*\|\s*p\.?\s*(\d+))?\s*\]/);
+    if (!fullMatch) return "";
+    const title = fullMatch[1].trim().toLowerCase();
+    const page = fullMatch[2] ? parseInt(fullMatch[2]) : 0;
+
+    // Try exact title+page match first
+    let idx = citations.findIndex(
+      (c) => c.document_title.toLowerCase() === title && (page === 0 || c.page === page)
     );
-    if (idx >= 0 && !usedInLine.has(idx)) {
-      usedInLine.add(idx);
+    // Fallback: substring match
+    if (idx < 0) {
+      idx = citations.findIndex(
+        (c) => c.document_title.toLowerCase().includes(title.slice(0, 30))
+          || title.includes(c.document_title.toLowerCase().slice(0, 30))
+      );
+    }
+    if (idx >= 0) {
+      emitted.add(idx);
       return ` **[${idx + 1}]**`;
     }
     return "";
@@ -316,16 +324,18 @@ export default function ChatPanel({
         }}
       >
         <Stack gap="md">
-          {messages.length === 0 && isStreaming && (
-            <Center py="xl">
-              <Loader size="sm" color="dark" />
-              <Text
-                ml="sm"
-                style={{ fontSize: 12, color: "var(--nsw-grey-04)" }}
-              >
-                Analysing impact on your address...
-              </Text>
-            </Center>
+          {messages.length === 0 && (
+            <div style={{ padding: "24px 0" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
+                <div style={{ width: 8, height: 8, background: "var(--nsw-brand-dark)", animation: "chatPulse 1.2s ease-in-out infinite" }} />
+                <Text style={{ fontSize: 12, color: "var(--nsw-grey-04)", fontFamily: "'Public Sans', sans-serif" }}>
+                  {isStreaming ? "Analysing impact on your address..." : "Loading chat..."}
+                </Text>
+              </div>
+              {[70, 90, 55].map((w, i) => (
+                <div key={i} style={{ height: 10, width: `${w}%`, background: "var(--nsw-grey-02)", marginBottom: 6, animation: "chatPulse 1.5s ease-in-out infinite", animationDelay: `${i * 0.2}s` }} />
+              ))}
+            </div>
           )}
 
           {messages.map((msg, i) => (
@@ -506,6 +516,10 @@ export default function ChatPanel({
       </div>
 
       <style>{`
+        @keyframes chatPulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.3; }
+        }
         @keyframes blink {
           50% { opacity: 0; }
         }

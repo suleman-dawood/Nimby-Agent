@@ -10,7 +10,7 @@ test.describe("Visual Check — Desktop", () => {
     await page.goto("/");
     await page.waitForTimeout(2000);
     await page.screenshot({ path: "screenshots/desktop-home.png", fullPage: true });
-    await expect(page.getByText("Planning Proposals", { exact: true })).toBeVisible();
+    await expect(page.getByText("Nimby Agent", { exact: true })).toBeVisible();
   });
 
   test("results page with data", async ({ page }) => {
@@ -79,7 +79,7 @@ test.describe("Visual Check — Mobile", () => {
     await page.goto("/");
     await page.waitForTimeout(2000);
     await page.screenshot({ path: "screenshots/mobile-home.png", fullPage: true });
-    await expect(page.getByText("Planning Proposals", { exact: true })).toBeVisible();
+    await expect(page.getByText("Nimby Agent", { exact: true })).toBeVisible();
   });
 
   test("results page mobile", async ({ page }) => {

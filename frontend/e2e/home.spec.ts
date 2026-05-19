@@ -8,7 +8,7 @@ test.describe("Home Page", () => {
 
   test("shows header with NSW branding", async ({ page }) => {
     await page.goto("/");
-    await expect(page.getByText("Planning Proposals", { exact: true })).toBeVisible();
+    await expect(page.getByText("Nimby Agent", { exact: true })).toBeVisible();
     await expect(page.getByText("NSW")).toBeVisible();
   });
 
@@ -19,9 +19,10 @@ test.describe("Home Page", () => {
 
   test("has navigation links", async ({ page }) => {
     await page.goto("/");
-    await expect(page.getByRole("link", { name: "Search" }).or(page.getByText("Search"))).toBeVisible();
-    await expect(page.getByRole("link", { name: "Results" }).or(page.getByText("Results"))).toBeVisible();
-    await expect(page.getByRole("link", { name: "About" }).or(page.getByText("About"))).toBeVisible();
+    // Use NavLink labels in sidebar
+    await expect(page.locator(".mantine-NavLink-label", { hasText: "Search" })).toBeVisible();
+    await expect(page.locator(".mantine-NavLink-label", { hasText: "Results" })).toBeVisible();
+    await expect(page.locator(".mantine-NavLink-label", { hasText: "About" })).toBeVisible();
   });
 
   test("dashboard link hidden when not signed in", async ({ page }) => {

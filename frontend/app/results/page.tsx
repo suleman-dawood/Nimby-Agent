@@ -36,19 +36,27 @@ export default function ResultsPage() {
   const router = useRouter();
   const [data, setData] = useState<SearchData | null>(null);
   const [activeStages, setActiveStages] = useState<string[]>([]);
+  const [compareMode, setCompareMode] = useState(false);
+  const [compareSelection, setCompareSelection] = useState<string[]>([]);
 
   useEffect(() => {
     const stored = sessionStorage.getItem("nimby_search");
     if (stored) {
       const parsed = JSON.parse(stored);
       setData(parsed);
-      // Default: all stages active
       const allStages = [...new Set(
         [...(parsed.results || []), ...(parsed.policy_results || [])]
           .map((pp: NearbyPP) => pp.stage)
           .filter(Boolean)
       )] as string[];
-      setActiveStages(allStages);
+      // Restore saved filters or default to all
+      const savedFilters = sessionStorage.getItem("nimby_stage_filters");
+      if (savedFilters) {
+        const parsed2 = JSON.parse(savedFilters) as string[];
+        setActiveStages(parsed2.filter((s) => allStages.includes(s)));
+      } else {
+        setActiveStages(allStages);
+      }
     }
   }, []);
 
@@ -70,9 +78,11 @@ export default function ResultsPage() {
   const filteredAll = [...filteredResults, ...filteredPolicy];
 
   const toggleStage = (stage: string) => {
-    setActiveStages((prev) =>
-      prev.includes(stage) ? prev.filter((s) => s !== stage) : [...prev, stage]
-    );
+    setActiveStages((prev) => {
+      const next = prev.includes(stage) ? prev.filter((s) => s !== stage) : [...prev, stage];
+      sessionStorage.setItem("nimby_stage_filters", JSON.stringify(next));
+      return next;
+    });
   };
 
   const handlePPClick = (pp: NearbyPP) => {
@@ -136,6 +146,39 @@ export default function ResultsPage() {
           </Group>
         )}
 
+        {/* Compare toggle */}
+        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+          <button
+            onClick={() => { setCompareMode(!compareMode); if (compareMode) setCompareSelection([]); }}
+            style={{
+              background: compareMode ? "var(--nsw-brand-dark)" : "var(--nsw-grey-01)",
+              color: compareMode ? "var(--nsw-white)" : "var(--nsw-grey-04)",
+              border: "none", padding: "6px 14px", cursor: "pointer",
+              fontFamily: "'Public Sans', sans-serif", fontSize: 11,
+              fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em",
+            }}
+          >
+            {compareMode ? "Exit compare" : "Compare proposals"}
+          </button>
+          {compareMode && compareSelection.length > 0 && (
+            <span style={{ fontFamily: "'Public Sans', sans-serif", fontSize: 12, color: "var(--nsw-grey-04)" }}>
+              {compareSelection.join(" vs ")}{compareSelection.length < 2 ? " — select one more" : ""}
+            </span>
+          )}
+          {compareMode && compareSelection.length === 2 && (
+            <button
+              onClick={() => router.push(`/compare?pp1=${compareSelection[0]}&pp2=${compareSelection[1]}`)}
+              style={{
+                background: "var(--nsw-brand-dark)", color: "var(--nsw-white)",
+                border: "none", padding: "6px 14px", cursor: "pointer",
+                fontFamily: "'Public Sans', sans-serif", fontSize: 11, fontWeight: 600,
+              }}
+            >
+              Compare now &rarr;
+            </button>
+          )}
+        </div>
+
         <MapProvider>
           <ProposalMap
             center={{ lat: data.lat, lng: data.lng }}
@@ -162,7 +205,15 @@ export default function ResultsPage() {
             <Grid>
               {filteredResults.map((pp) => (
                 <Grid.Col key={pp.pp_number} span={{ base: 12, sm: 6, md: 4 }}>
-                  <PPCard pp={pp} onClick={() => handlePPClick(pp)} />
+                  <PPCard
+                    pp={pp}
+                    onClick={compareMode ? undefined : () => handlePPClick(pp)}
+                    compareSelected={compareSelection.includes(pp.pp_number)}
+                    onCompareToggle={compareMode ? (ppn) => setCompareSelection((prev) =>
+                      prev.includes(ppn) ? prev.filter((p) => p !== ppn)
+                        : prev.length < 2 ? [...prev, ppn] : prev
+                    ) : undefined}
+                  />
                 </Grid.Col>
               ))}
             </Grid>
@@ -188,7 +239,15 @@ export default function ResultsPage() {
             <Grid>
               {filteredPolicy.map((pp) => (
                 <Grid.Col key={pp.pp_number} span={{ base: 12, sm: 6, md: 4 }}>
-                  <PPCard pp={pp} onClick={() => handlePPClick(pp)} />
+                  <PPCard
+                    pp={pp}
+                    onClick={compareMode ? undefined : () => handlePPClick(pp)}
+                    compareSelected={compareSelection.includes(pp.pp_number)}
+                    onCompareToggle={compareMode ? (ppn) => setCompareSelection((prev) =>
+                      prev.includes(ppn) ? prev.filter((p) => p !== ppn)
+                        : prev.length < 2 ? [...prev, ppn] : prev
+                    ) : undefined}
+                  />
                 </Grid.Col>
               ))}
             </Grid>
@@ -196,9 +255,16 @@ export default function ResultsPage() {
         )}
 
         {filteredAll.length === 0 && (
-          <Alert color="blue" title="No proposals found">
-            No planning proposals match your filters near this address.
-          </Alert>
+          <div style={{ border: "2px dashed var(--nsw-grey-03)", padding: 32, textAlign: "center" }}>
+            <Text style={{ fontFamily: "'Public Sans', sans-serif", fontSize: 16, fontWeight: 600, color: "var(--nsw-brand-dark)", marginBottom: 8 }}>
+              No planning proposals found
+            </Text>
+            <Text style={{ fontSize: 13, color: "var(--nsw-grey-04)" }}>
+              {allPPs.length === 0
+                ? "No proposals found within your search radius. Try expanding the radius or searching a different address."
+                : "No proposals match your selected stage filters. Try enabling more filters above."}
+            </Text>
+          </div>
         )}
       </Stack>
     </Container>

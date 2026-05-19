@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 
 test.describe("Brief Page", () => {
-  const testPP = "PP-2023-2828";
+  const testPP = "PP-2025-2427";
 
   test("loads brief page with PP number", async ({ page }) => {
     await page.goto(`/brief/${testPP}`);
