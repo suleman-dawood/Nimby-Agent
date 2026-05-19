@@ -8,7 +8,7 @@ export default defineConfig({
     headless: true,
   },
   webServer: {
-    command: "npm run dev",
+    command: "NEXT_PUBLIC_API_URL=https://api-service-production-6a0d.up.railway.app npm run dev",
     port: 3000,
     timeout: 60000,
     reuseExistingServer: true,
